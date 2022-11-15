@@ -5,43 +5,61 @@ import shutil
 import subprocess
 import time
 from pathlib import Path
+from enum import Enum
 
 import typer
 from click._termui_impl import ProgressBar, V
 
+class Status(Enum):
+    NULL = 0
+    SUCCESS = 1
+    FAILURE = 2
 
-def compile_and_run(file_path: Path, flag: str, progress: ProgressBar[V], directory: str, timeout: float) -> None:
-    output_path = file_path.parent / f"O{flag}"
-    shutil.rmtree(output_path, ignore_errors=True)
-    os.mkdir(output_path)
+def compile(binary_file_path: str, file_path: Path, flag: str) -> Status: 
+    shutil.rmtree(binary_file_path, ignore_errors=True)
+    os.mkdir(binary_file_path)
     fmt_command = f"rustfmt {file_path}"
     subprocess.run(fmt_command.split(" "), stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
-    command = f"rustc -C opt-level={flag} {file_path} -o {output_path / 'out'}"
+    command = f"rustc -C opt-level={flag} {file_path} -o {binary_file_path / 'out'}"
     result = subprocess.run(command.split(" "), stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
-    with open(output_path / "compile.log", "w") as file:
+    with open(binary_file_path / "compile.log", "w") as file:
         file.write(result.stderr.decode())
+
     if result.returncode == 0:
-        try:
-            start_time = time.time()
-            with open(file_path.parent / (file_path.stem + '.txt')) as file:
-                cli_args = file.read()
-            run_result = subprocess.run(
-                [f"{output_path / 'out'}", *cli_args.split(" ")], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout
-            )
-            end_time = time.time() - start_time
-            with open(Path(directory) / "time.log", "a") as file:
-                file.write(f"{end_time}\n")
-            with open(output_path / "output.log", "w") as file:
-                file.write(run_result.stdout.decode())
-                file.write(run_result.stderr.decode())
-                file.write(f"Exit Code {run_result.returncode}")
-        except subprocess.TimeoutExpired:
-            with open(output_path / "output.log", "w") as file:
-                file.write("Timeout")
+        return Status.SUCCESS
+    return Status.FAILURE
+
+def run(file_path: Path, binary_file_path: str, directory: str, timeout: float):
+    try:
+        start_time = time.time()
+        with open(file_path.parent / (file_path.stem + '.txt')) as file:
+            cli_args = file.read()
+        run_result = subprocess.run(
+            [f"{binary_file_path / 'out'}", *cli_args.split(" ")], stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout
+        )
+        end_time = time.time() - start_time
+        with open(Path(directory) / "time.log", "a") as file:
+            file.write(f"{end_time}\n")
+        with open(binary_file_path / "output.log", "w") as file:
+            file.write(run_result.stdout.decode())
+            file.write(run_result.stderr.decode())
+            file.write(f"Exit Code {run_result.returncode}")
+    except subprocess.TimeoutExpired:
+        with open(binary_file_path / "output.log", "w") as file:
+            file.write("Timeout")
+
+def reduce(file_path: Path): # arg: filename
+    # compile and run the file in two different ways
+    # if result different, then reduce
+    pass
+
+def compile_and_run(file_path: Path, flag: str, progress: ProgressBar[V], directory: str, timeout: float) -> None:
+    binary_file_path = file_path.parent / f"O{flag}"
+    if compile(binary_file_path, file_path, flag) == Status.SUCCESS:
+       run(binary_file_path, file_path, directory, timeout)
     progress.update(1)
 
-
-def main(threads: int = 8, timeout: float = 5.0) -> None:
+def main(threads: int = 15, timeout: float = 5.0) -> None:
     directory = "outRust"
     files = [dI for dI in os.listdir(directory) if os.path.isdir(os.path.join(directory, dI))]
     files.sort(key=lambda x: int(x.split("file")[1]))
