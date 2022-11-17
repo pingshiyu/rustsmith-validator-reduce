@@ -2,3 +2,4 @@ dist
 .idea
 **/out_*
 rustsmith_validator/reduce/*
+!rustsmith_validator/reduce/.gitkeep
