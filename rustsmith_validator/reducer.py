@@ -25,6 +25,7 @@ class Bug:
     v2_config: BugConfig
     path: Path
     cli_args_path: Optional[Path] = None # default: no args
+    time_limit: float = 0.10
 
 def _random_str(size : int = 16, chars : str = string.ascii_letters+string.digits) -> str:
     """
@@ -56,8 +57,7 @@ def _create_reduce_folder(bug: Bug, folder_root: Path, retries : int = 3) -> Pat
 def reduce(
     bug: Bug, 
     folder_root: Path = Path("."), 
-    creduce_script_template_path : Path = Path("./shell-script-templates")/"triggers_bug.sh",
-    time_limit_per_run: float = 0.50
+    creduce_script_template_path : Path = Path("./shell-script-templates")/"triggers_bug.sh"
 ) -> None:
     # create and populate folder with bug 
     reduce_folder = _create_reduce_folder(bug, folder_root)
@@ -71,12 +71,12 @@ def reduce(
     script = ""
     with creduce_script_template_path.open() as f:
         script = f.read().format(
-            arguments=arguments,
-            rustc_v1=bug.v1_config.version,
-            opt_1=bug.v1_config.opt_flag,
-            rustc_v2=bug.v2_config.version,
-            opt_2=bug.v2_config.opt_flag,
-            time_limit=time_limit_per_run
+            arguments  = arguments,
+            rustc_v1   = bug.v1_config.version,
+            opt_1      = bug.v1_config.opt_flag,
+            rustc_v2   = bug.v2_config.version,
+            opt_2      = bug.v2_config.opt_flag,
+            time_limit = bug.time_limit
         )
     
     # write script to bug folder
