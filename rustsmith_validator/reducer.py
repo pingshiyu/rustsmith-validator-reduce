@@ -1,9 +1,9 @@
 """
 For a bug, we will reduce it by:
 - Copy the found bug into its own folder
-- Generate the shell script to reproduce the bug. 2 versions:
-    - comparing outputs of two different optimsation levels
-    - comparing outputs across 2 different versions
+- Generate the shell script to reproduce the bug. Bugs are based on different results when compiling the same file under different settings:
+    - Different compiler versions
+    - Different optimisation flags
 - Call CReduce on the file with the generated bug-detection script
 """
 import string
@@ -12,7 +12,6 @@ import subprocess
 from dataclasses import dataclass
 from typing import Optional
 from pathlib import Path
-import stat
 import shutil
 
 @dataclass
