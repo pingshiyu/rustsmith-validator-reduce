@@ -90,12 +90,19 @@ def reduce(
     subprocess.run(creduce_command.split(), cwd=reduce_folder)
 
 def main() -> None:
-    bug = Bug(
+    bug1 = Bug(
         v1_config=BugConfig("1.45.0", "0"),
         v2_config=BugConfig("1.45.0", "2"),
         path=Path('.')/"original_bugs"/"bug1-in-1.40"/"bug1-in-1.40.rs"
     )
-    reduce(bug, Path('.')/"reduce") 
+
+    bug2 = Bug(
+        v1_config=BugConfig("1.61.0", "0"),
+        v2_config=BugConfig("1.61.0", "s"),
+        path=Path('.')/"original_bugs"/"bug3-in-1.61.0"/"bug3-in-1.61.0.rs",
+        cli_args_path=Path('.')/"original_bugs"/"bug3-in-1.61.0"/"args.txt"
+    )
+    reduce(bug2, Path('.')/"reduce") 
 
 if __name__ == '__main__':
     main()
