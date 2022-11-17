@@ -1,3 +1,4 @@
 dist
 .idea
 **/out_*
+rustsmith_validator/reduce/*

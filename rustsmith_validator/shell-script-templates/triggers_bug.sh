@@ -1,16 +1,29 @@
 #!/bin/bash
 
-# run rustc for 2 optimisations
+# run rustc for different:
+#   - optimisation levels
+#   - compiler versions
 # compare results. if not equal then output 0. if equal then output 1
 
+################################ ARGUMENTS ################################
+
 # time limit in seconds
-TIME_LIMIT=1.0
+TIME_LIMIT={time_limit}
+
+# cli args
+PROGRAM_ARGS="{arguments}"
+
+# rust compiler verions
+RUSTC1="{rustc_v1}"
+RUSTC2="{rustc_v2}"
 
 # these two options should result in different code being generated
-OPT1="0" 
-OPT2="2"
+OPT1="{opt_1}"
+OPT2="{opt_2}"
 
-run_with_timeout() {
+###########################################################################
+
+run_with_timeout() {{
     # arg1: command to run with timeout
     timeout $TIME_LIMIT $1
     local EXIT_CODE=$?
@@ -20,21 +33,21 @@ run_with_timeout() {
         echo "exited with code $EXIT_CODE"
     fi
     return 0
-}
+}}
 
-main() {
+main() {{
     # compile with the two optimisation flags
-    BIN1="out_O$OPT1"
-    BIN2="out_O$OPT2"
+    BIN1="out_${{RUSTC1}}_O${{OPT1}}"
+    BIN2="out_${{RUSTC2}}_O${{OPT2}}"
 
     echo "Compiling the two files... $BIN1 and $BIN2"
-    rustc -C opt-level=$OPT1 bug.rs -o $BIN1
-    rustc -C opt-level=$OPT2 bug.rs -o $BIN2
+    RUSTUP_TOOLCHAIN=$RUSTC1 rustc -C opt-level=$OPT1 bug.rs -o $BIN1
+    RUSTUP_TOOLCHAIN=$RUSTC2 rustc -C opt-level=$OPT2 bug.rs -o $BIN2
 
     # run the two files and determine if they are equal
-    OUT1=$( run_with_timeout "./$BIN1" )
+    OUT1=$( run_with_timeout "./$BIN1 $PROGRAM_ARGS" )
     echo "output for $BIN1 is: $OUT1"
-    OUT2=$( run_with_timeout "./$BIN2" )
+    OUT2=$( run_with_timeout "./$BIN2 $PROGRAM_ARGS" )
     echo "output for $BIN2 is: $OUT2"
 
     if [ "$OUT1" != "$OUT2" ]; then
@@ -44,6 +57,6 @@ main() {
         echo "Bug disappeared, oh no!"
         exit 1 # bug no longer exists
     fi
-}
+}}
 
 main

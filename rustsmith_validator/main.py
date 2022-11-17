@@ -48,11 +48,6 @@ def run(file_path: Path, binary_file_path: str, directory: str, timeout: float):
         with open(binary_file_path / "output.log", "w") as file:
             file.write("Timeout")
 
-def reduce(file_path: Path): # arg: filename
-    # compile and run the file in two different ways
-    # if result different, then reduce
-    pass
-
 def compile_and_run(file_path: Path, flag: str, progress: ProgressBar[V], directory: str, timeout: float) -> None:
     binary_file_path = file_path.parent / f"O{flag}"
     if compile(binary_file_path, file_path, flag) == Status.SUCCESS:

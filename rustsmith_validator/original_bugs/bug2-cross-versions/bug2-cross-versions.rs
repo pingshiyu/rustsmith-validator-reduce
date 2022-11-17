@@ -1,5 +1,7 @@
 #![allow(warnings, unused, unconditional_panic)]
 
+use std::fmt;
+
 const const1: f64 = 0.040073361631997484f64;
 const const2: u16 = 48078u16;
 const const3: usize = 13313964891403931718usize;
@@ -1725,7 +1727,6 @@ fn fun97(var2957: usize) -> Vec<i64> {
     vec![-433215508475941097i64, -6065981039473437199i64, -1672521164184265703i64, 5446757865557582927i64]
 }
 
-
 fn main() -> () {
     use std::env;
     let cli_args: Vec<String> = env::args().collect();
@@ -1734,6 +1735,7 @@ fn main() -> () {
     println!("{:?}", var67);
     let var69: i128 = 34792619999186950861420256553174253280i128;
     let var68: i128 = var69;
+    // println!("array is {:?}", cli_args);
     cli_args[1].clone().parse::<i64>().unwrap();
     let var71: Struct4 = Struct4 { var48: cli_args[2].clone().parse::<u16>().unwrap(), var49: Struct5 { var72: (cli_args[3].clone().parse::<u8>().unwrap() & 128u8), var73: Struct3 { var44: 0.11593085623749066f64, var45: Struct3 { var44: 0.38584985847821607f64, var45: cli_args[4].clone().parse::<usize>().unwrap(), var46: cli_args[1].clone().parse::<i64>().unwrap(), var47: 7836391120464846941usize }.var47, var46: cli_args[1].clone().parse::<i64>().unwrap(), var47: vec![reconditioned_access!(vec![cli_args[3].clone().parse::<u8>().unwrap(),153u8,30u8,106u8,cli_args[3].clone().parse::<u8>().unwrap(),cli_args[3].clone().parse::<u8>().unwrap()], 3400878874891297653usize), 118u8, 13u8, cli_args[3].clone().parse::<u8>().unwrap(), 248u8, cli_args[3].clone().parse::<u8>().unwrap(), fun7()].len() } }.var73 };
     let mut var70: Struct4 = var71;
@@ -1783,7 +1785,7 @@ fn main() -> () {
     println!("{:?}", ("var2369", var2369));
     println!("{:?}", ("var2435", var2435));
     println!("{:?}", ("var2514", var2514));
-    println!("{:?}", ("var2976", var2976));
+    println!("(\"var2976\", {:e})", var2976);
     println!("{:?}", ("var2983", var2983));
     println!("{:?}", ("var2984", var2984));
     println!("{:?}", ("var2985", var2985));
