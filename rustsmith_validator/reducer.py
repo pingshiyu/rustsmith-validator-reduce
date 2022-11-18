@@ -58,10 +58,11 @@ def reduce(
     bug: Bug, 
     folder_root: Path = Path("."), 
     creduce_script_template_path : Path = Path("./shell-script-templates")/"triggers_bug.sh"
-) -> None:
+) -> Path:
     # create and populate folder with bug 
     reduce_folder = _create_reduce_folder(bug, folder_root)
-    shutil.copy(bug.path, reduce_folder / "bug.rs")
+    bug_path = (reduce_folder / "bug.rs")
+    shutil.copy(bug.path, bug_path)
 
     # create creduce interestingness script
     arguments = ""
@@ -88,6 +89,8 @@ def reduce(
     # call creduce
     creduce_command = "creduce ./triggers_bug.sh bug.rs --not-c"
     subprocess.run(creduce_command.split(), cwd=reduce_folder)
+
+    return bug_path
 
 def main() -> None:
     bug1 = Bug(
