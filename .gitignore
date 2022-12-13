@@ -3,3 +3,6 @@ dist
 **/out_*
 rustsmith_validator/reduce/*
 !rustsmith_validator/reduce/.gitkeep
+
+mutation-test/*
+!mutation-test/**/*.py

@@ -18,6 +18,8 @@ import shutil
 class BugConfig:
     version: str
     opt_flag: str
+    mutation: int = 0
+    compiler_path: str = "rustc"
 
 @dataclass
 class Bug:
@@ -54,14 +56,14 @@ def _create_reduce_folder(bug: Bug, folder_root: Path, retries : int = 3) -> Pat
 
     return reduce_folder
 
-def reduce(
+def prepare_reduce_folder(
     bug: Bug, 
-    folder_root: Path = Path("."), 
-    creduce_script_template_path : Path = Path("./shell-script-templates")/"triggers_bug.sh"
+    folder_root: Path,
+    creduce_script_template_path : Path,
 ) -> Path:
     # create and populate folder with bug 
     reduce_folder = _create_reduce_folder(bug, folder_root)
-    bug_path = (reduce_folder / "bug.rs")
+    bug_path = (reduce_folder / bug.path.name)
     shutil.copy(bug.path, bug_path)
 
     # create creduce interestingness script
@@ -81,16 +83,26 @@ def reduce(
         )
     
     # write script to bug folder
-    script_path = reduce_folder / "triggers_bug.sh"
+    script_path = reduce_folder / creduce_script_template_path.name
     script_path.touch()
     script_path.write_text(script)
     script_path.chmod(script_path.stat().st_mode | 0o111) # chmod +x
 
+    return reduce_folder
+
+def reduce(
+    bug: Bug, 
+    folder_root: Path = Path("."), 
+    creduce_script_template_path : Path = Path("./shell-script-templates")/"triggers_bug.sh"
+) -> Path:
+    reduce_folder = prepare_reduce_folder(
+            bug, folder_root=folder_root, creduce_script_template_path=creduce_script_template_path)
+
     # call creduce
-    creduce_command = "creduce ./triggers_bug.sh bug.rs --not-c"
+    creduce_command = f"creduce ./{creduce_script_template_path.name} {bug.path.name} --not-c"
     subprocess.run(creduce_command.split(), cwd=reduce_folder)
 
-    return bug_path
+    return reduce_folder / bug.path.name
 
 def main() -> None:
     bug1 = Bug(

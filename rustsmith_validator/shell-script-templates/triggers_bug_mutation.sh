@@ -1,8 +1,6 @@
 #!/bin/bash
 
 # run rustc for different:
-#   - optimisation levels
-#   - compiler versions
 #   - mutation levels
 # and compare results. if not equal then output 0. if equal then output 1
 
@@ -14,20 +12,11 @@ TIME_LIMIT={time_limit}
 # cli args
 PROGRAM_ARGS="{arguments}"
 
-# rust compiler verions
-RUSTC_V1="{rustc_v1}"
-RUSTC_V2="{rustc_v2}"
+# mutation number
+MUTATION="{mutation}"
 
-# these two options should result in different code being generated
-OPT1="{opt_1}"
-OPT2="{opt_2}"
-
-# custom rustc binary
-RUSTC="{rustc_binary}"
-
-# mutations (only works with binary that accepts mutations)
-MUTATION1="{mutation1}"
-MUTATION2="{mutation2}"
+# should result in different code being generated
+OPT="{opt}"
 
 # name of bug file, e.g. bug.rs
 FILE="{file}"
@@ -48,20 +37,20 @@ run_with_timeout() {{
 
 main() {{
     # compile with the two optimisation flags
-    BIN1="out_${{RUSTC_V1}}_O${{OPT1}}_MUT${{MUTATION1}}"
-    BIN2="out_${{RUSTC_V2}}_O${{OPT2}}_MUT${{MUTATION2}}"
+    BIN_ORIGINAL="out_${{OPT}}_original"
+    BIN_MUTATION="out_${{OPT}}_mutated_${{MUTATION}}"
 
-    echo "Compiling the two files... $BIN1 and $BIN2"
-    RUSTC1="RUSTUP_TOOLCHAIN=$RUSTC_V1 RUSTC_MUTATION_NUMBER=$MUTATION1 $RUSTC"
-    RUSTC2="RUSTUP_TOOLCHAIN=$RUSTC_V2 RUSTC_MUTATION_NUMBER=$MUTATION2 $RUSTC"
-    $RUSTC1 -C opt-level=$OPT1 $FILE -o $BIN1
-    $RUSTC2 -C opt-level=$OPT2 $FILE -o $BIN2
+    echo "Compiling the two files... $BIN_ORIGINAL and $BIN_MUTATION"
+    RUSTC_ORIGINAL="RUSTC_MUTATION_NUMBER=0 $COMPILER_PATH"
+    RUSTC_MUTATION="RUSTC_MUTATION_NUMBER=$MUTATION $COMPILER_PATH"
+    $RUSTC_ORIGINAL -C opt-level=$OPT $FILE -o $BIN_ORIGINAL
+    $RUSTC_MUTATION -C opt-level=$OPT $FILE -o $BIN_MUTATION
 
     # run the two files and determine if they are equal
-    OUT1=$( run_with_timeout "./$BIN1 $PROGRAM_ARGS" )
-    echo "output for $BIN1 is: $OUT1"
-    OUT2=$( run_with_timeout "./$BIN2 $PROGRAM_ARGS" )
-    echo "output for $BIN2 is: $OUT2"
+    OUT1=$( run_with_timeout "./$BIN_ORIGINAL $PROGRAM_ARGS" )
+    echo "output for $BIN_ORIGINAL is: $OUT1"
+    OUT2=$( run_with_timeout "./$BIN_MUTATION $PROGRAM_ARGS" )
+    echo "output for $BIN_MUTATION is: $OUT2"
 
     if [ "$OUT1" != "$OUT2" ]; then
         echo "Bug still exists"
