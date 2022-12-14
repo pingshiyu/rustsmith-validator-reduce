@@ -7,6 +7,9 @@ from pathlib import Path
 import subprocess
 import argparse
 import shutil
+from multiprocessing import Pool
+import multiprocessing.context
+from enum import Enum, auto
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -60,29 +63,37 @@ def parse_args() -> argparse.Namespace:
 
     return args
 
+class Detection(Enum):
+    UNDETECTED = 1
+    TIMEOUT = auto()
+    BINARY = auto()
+
 def difference_detected(
     test_case: TestCase,
     env: ReductionEnv,
-    keep: bool = False) -> bool:
+    keep: bool = False) -> Detection:
     """
     Checks if the test_case is able to detect the `mutant`. Returns true iff difference exists
     """
     reduction_folder = prepare_reduce_folder(test_case, env)
 
     # run the interestingness script to check if test_case exists
-    result = subprocess.run("./interesting.sh", cwd=reduction_folder)
+    result = subprocess.run(
+        "./interesting.sh", cwd=reduction_folder, 
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+    )
 
     # cleanup folder created
     if not keep:
         shutil.rmtree(reduction_folder)
 
-    return result.returncode == 0
+    return Detection.BINARY if result.returncode == 0 else Detection.UNDETECTED
 
-def check_single(args: argparse.Namespace) -> bool:
+def check_single(args: argparse.Namespace, mutant: int) -> Detection:
     # create a test case using the test script, compiler, and mutation settings.
     test_case = TestCase(
         CompilerConfig("", "0", 0, args.compiler), 
-        CompilerConfig("", "0", args.mutation, args.compiler), 
+        CompilerConfig("", "0", mutant, args.compiler), 
         args.input_path, 
         args.input_args_path
     )
@@ -93,29 +104,28 @@ def check_single(args: argparse.Namespace) -> bool:
         keep=args.keep
     )
 
-def check_all(args: argparse.Namespace, min_mutant: int, max_mutant: int) -> list[int]:
+def check_all(args: argparse.Namespace, min_mutant: int, max_mutant: int) -> list[tuple[int, Detection]]:
     """
     Check if any of [args.mutation, max_mutant) mutants results in different code on the
     test case {args.input_path, args.input_args_path} 
     """
     mutants_detected = []
+    with Pool(processes=8) as p:
+        # parallel_args = ((args, m) for m in range(min_mutant, max_mutant+1))
+        # results = p.starmap(check_single, parallel_args)
+        mutants = list(range(min_mutant, max_mutant+1))
+        async_results = [p.apply_async(check_single, (args, m)) for m in mutants]
 
-    for m in range(args.mutation, max_mutant+1):
-        # create a test case using the test script, compiler, and mutation settings.
-        test_case = TestCase(
-            CompilerConfig("", "0", 0, args.compiler), 
-            CompilerConfig("", "0", m, args.compiler), 
-            args.input_path, 
-            args.input_args_path
-        )
-        
-        detected = difference_detected(
-            test_case, 
-            ReductionEnv(args.reduce_root, args.template_script), 
-            keep=args.keep
-        )
-        if detected:
-            mutants_detected.append(m)
+        # get the results
+        for m, result in zip(mutants, async_results):
+            detected = Detection.UNDETECTED
+            try:
+                detected = result.get(30)
+            except multiprocessing.context.TimeoutError as e:
+                detected = Detection.TIMEOUT
+
+            if detected != Detection.UNDETECTED:
+                mutants_detected.append((m, detected))
 
     return mutants_detected
 
@@ -126,9 +136,7 @@ def main() -> None:
     if args.try_all:
         print("mutants triggered:", check_all(args, args.mutation, args.max_mutation))
     else:
-        check_single(args)
-
-    # mutations [12, 18, 20, 28, 43] killed by `mutation-test/tests/outRust-12/file0/file0.rs`
+        check_single(args, args.mutation)
 
 if __name__ == '__main__':
     main()
