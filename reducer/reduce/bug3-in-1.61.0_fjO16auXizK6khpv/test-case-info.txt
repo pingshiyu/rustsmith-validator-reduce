@@ -1,0 +1,11 @@
+TestCase(v1_config=CompilerConfig(version='1.61.0',
+                                  opt_flag='0',
+                                  mutation=0,
+                                  compiler_path='rustc'),
+         v2_config=CompilerConfig(version='1.61.0',
+                                  opt_flag='s',
+                                  mutation=0,
+                                  compiler_path='rustc'),
+         path=PosixPath('reducer/original_bugs/bug3-in-1.61.0/bug3-in-1.61.0.rs'),
+         cli_args_path=PosixPath('reducer/original_bugs/bug3-in-1.61.0/args.txt'),
+         time_limit=0.1)

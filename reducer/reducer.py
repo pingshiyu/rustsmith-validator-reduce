@@ -1,44 +1,43 @@
 """
 For a bug, we will reduce it by:
 - Copy the found bug into its own folder
-- Generate the shell script to reproduce the bug. Bugs are based on different results when compiling the same file under different settings:
+- Generate the shell script to reproduce the bug. TestCases are based on different results when compiling the same file under different settings:
     - Different compiler versions
     - Different optimisation flags
 - Call CReduce on the file with the generated bug-detection script
 """
-from comparison import Bug, BugConfig, prepare_reduce_folder
+from reducer.comparison import TestCase, CompilerConfig, ReductionEnv, prepare_reduce_folder
 
 import subprocess
 from pathlib import Path
 
 def reduce(
-    bug: Bug, 
-    folder_root: Path = Path("."), 
-    creduce_script_template_path : Path = Path("./shell-script-templates")/"triggers_bug.sh"
+    case: TestCase, 
+    env: ReductionEnv
 ) -> Path:
-    reduce_folder = prepare_reduce_folder(
-            bug, folder_root=folder_root, creduce_script_template_path=creduce_script_template_path)
+    reduce_folder = prepare_reduce_folder(case, env)
 
     # call creduce
-    creduce_command = f"creduce ./interesting.sh bug.rs --not-c"
+    creduce_command = f"creduce ./interesting.sh test-case.rs --not-c"
     subprocess.run(creduce_command.split(), cwd=reduce_folder)
 
-    return reduce_folder / bug.path.name
+    return reduce_folder / case.path.name
 
 def main() -> None:
-    bug1 = Bug(
-        v1_config=BugConfig("1.45.0", "0"),
-        v2_config=BugConfig("1.45.0", "2"),
-        path=Path('.')/"original_bugs"/"bug1-in-1.40"/"bug1-in-1.40.rs"
+    env = ReductionEnv()
+    case1 = TestCase(
+        v1_config=CompilerConfig("1.45.0", "0"),
+        v2_config=CompilerConfig("1.45.0", "2"),
+        path=Path('./reducer/original_bugs/bug1-in-1.40/bug1-in-1.40.rs')
     )
 
-    bug2 = Bug(
-        v1_config=BugConfig("1.61.0", "0"),
-        v2_config=BugConfig("1.61.0", "s"),
-        path=Path('.')/"original_bugs"/"bug3-in-1.61.0"/"bug3-in-1.61.0.rs",
-        cli_args_path=Path('.')/"original_bugs"/"bug3-in-1.61.0"/"args.txt"
+    case2 = TestCase(
+        v1_config=CompilerConfig("1.61.0", "0"),
+        v2_config=CompilerConfig("1.61.0", "s"),
+        path=Path('./reducer/original_bugs/bug3-in-1.61.0/bug3-in-1.61.0.rs'),
+        cli_args_path=Path('./reducer/original_bugs/bug3-in-1.61.0/args.txt')
     )
-    reduce(bug2, Path('.')/"reduce") 
+    reduce(case2, env) 
 
 if __name__ == '__main__':
     main()
