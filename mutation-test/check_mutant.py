@@ -71,23 +71,27 @@ class Detection(Enum):
 def difference_detected(
     test_case: TestCase,
     env: ReductionEnv,
-    keep: bool = False) -> Detection:
+    keep: bool = False,
+    timeout: int = 30) -> Detection:
     """
     Checks if the test_case is able to detect the `mutant`. Returns true iff difference exists
     """
     reduction_folder = prepare_reduce_folder(test_case, env)
 
     # run the interestingness script to check if test_case exists
-    result = subprocess.run(
-        "./interesting.sh", cwd=reduction_folder, 
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-    )
-
-    # cleanup folder created
-    if not keep:
-        shutil.rmtree(reduction_folder)
-
-    return Detection.BINARY if result.returncode == 0 else Detection.UNDETECTED
+    try:
+        result = subprocess.run(
+            "./interesting.sh", cwd=reduction_folder, 
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            timeout=timeout
+        )
+        return Detection.BINARY if result.returncode == 0 else Detection.UNDETECTED
+    except subprocess.TimeoutExpired:
+        return Detection.TIMEOUT
+    finally:
+        # cleanup folder created
+        if not keep:
+            shutil.rmtree(reduction_folder)    
 
 def check_single(args: argparse.Namespace, mutant: int) -> Detection:
     # create a test case using the test script, compiler, and mutation settings.
@@ -111,18 +115,12 @@ def check_all(args: argparse.Namespace, min_mutant: int, max_mutant: int) -> lis
     """
     mutants_detected = []
     with Pool(processes=8) as p:
-        # parallel_args = ((args, m) for m in range(min_mutant, max_mutant+1))
-        # results = p.starmap(check_single, parallel_args)
         mutants = list(range(min_mutant, max_mutant+1))
         async_results = [p.apply_async(check_single, (args, m)) for m in mutants]
 
         # get the results
         for m, result in zip(mutants, async_results):
-            detected = Detection.UNDETECTED
-            try:
-                detected = result.get(30)
-            except multiprocessing.context.TimeoutError as e:
-                detected = Detection.TIMEOUT
+            detected = result.get()
 
             if detected != Detection.UNDETECTED:
                 mutants_detected.append((m, detected))
@@ -134,7 +132,7 @@ def main() -> None:
     # print(args)
 
     if args.try_all:
-        print("mutants triggered:", check_all(args, args.mutation, args.max_mutation))
+        print("mutants detected:", check_all(args, args.mutation, args.max_mutation))
     else:
         check_single(args, args.mutation)
 
