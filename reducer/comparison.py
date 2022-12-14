@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Optional
 from pathlib import Path
 import shutil
+import pprint as pp
 
 @dataclass
 class BugConfig:
@@ -38,7 +39,7 @@ def _create_reduce_folder(bug: Bug, folder_root: Path, retries : int = 3) -> Pat
     # make root folder
     reduce_folder = folder_root / folder_name
     try: 
-        print(reduce_folder)
+        print("folder created:", reduce_folder)
         reduce_folder.mkdir(parents=True, exist_ok=False)
     except FileExistsError as e:
         print("folder name collision:", reduce_folder)
@@ -71,7 +72,7 @@ def prepare_reduce_folder(
     
     # bug information (for tracing back on the bug)
     with open(reduce_folder/"bug-info.txt", "w") as f:
-        f.write(str(bug))
+        f.write(pp.pformat(bug))
 
     # create creduce interestingness script
     arguments = ""
