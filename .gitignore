@@ -6,3 +6,5 @@ rustsmith_validator/reduce/*
 
 mutation-test/*
 !mutation-test/**/*.py
+
+**/__pycache__
