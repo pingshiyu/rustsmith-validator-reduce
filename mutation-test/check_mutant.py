@@ -134,7 +134,7 @@ def main() -> None:
     if args.try_all:
         print("mutants detected:", check_all(args, args.mutation, args.max_mutation))
     else:
-        check_single(args, args.mutation)
+        print("mutant detection:", check_single(args, args.mutation))
 
 if __name__ == '__main__':
     main()
