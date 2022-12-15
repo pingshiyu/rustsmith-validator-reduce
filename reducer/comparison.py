@@ -37,7 +37,7 @@ def _random_str(size : int = 16, chars : str = string.ascii_letters+string.digit
     """
     return ''.join(random.choice(chars) for _ in range(size))
 
-def _create_reduce_folder(test_case: TestCase, folder_root: Path, retries : int = 3) -> Path:
+def _create_reduce_folder(test_case: TestCase, folder_root: Path, retries : int = 3, verbose: bool = False) -> Path:
     """
     Creates the reduce folder for the test case in `test_case_path`
     """
@@ -49,7 +49,7 @@ def _create_reduce_folder(test_case: TestCase, folder_root: Path, retries : int 
     # make root folder
     reduce_folder = folder_root / folder_name
     try: 
-        print("folder created:", reduce_folder)
+        if verbose: print("folder created:", reduce_folder)
         reduce_folder.mkdir(parents=True, exist_ok=False)
     except FileExistsError:
         print("folder name collision:", reduce_folder)

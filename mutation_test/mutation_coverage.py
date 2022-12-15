@@ -9,10 +9,17 @@ import argparse
 import shutil
 from multiprocessing import Pool
 from enum import Enum, auto
+from dataclasses import dataclass
+
+MUTATED_RUSTC_PATH = "/home/jacob/projects/rustsmith/rust-mutcov/rust-build/bin/rustc"
+TEMPLATE_SCRIPT_PATH = Path("reducer/shell-script-templates/triggers_bug.sh")
+DEFAULT_REDUCE_ROOT = Path("reducer/reduce/mutations/")
+MAX_MUTANT = 380
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        prog="python -m mutation-test.mutation_coverage",
+        prog="python -m mutation_test.mutation_coverage",
         description="Computes mutation coverage of test cases"
     )
 
@@ -23,15 +30,14 @@ def parse_args() -> argparse.Namespace:
                             help="Path to the cmd args of the input test case.")
 
     compiler_config = test_case_config.add_mutually_exclusive_group()
-    mutated_rustc_location = "/home/jacob/projects/rustsmith/rust-mutcov/rust-build/bin/rustc"
     compiler_config.add_argument("-c", "--compiler", type=str,
-                                 default=mutated_rustc_location,
+                                 default=MUTATED_RUSTC_PATH,
                                  help="Location of compiler to use")
     compiler_config.add_argument("--use-default-compiler", action="store_const", dest="compiler",
                                  const="rustc",
                                  help="Use the default rustc compiler")
     compiler_config.add_argument("--use-mutation-compiler", action="store_const", dest="compiler",
-                                 const=mutated_rustc_location,
+                                 const=MUTATED_RUSTC_PATH,
                                  help="Use the rustc compiler with mutations built in")
 
     mutation_config = parser.add_argument_group("Mutation Settings")
@@ -39,7 +45,7 @@ def parse_args() -> argparse.Namespace:
                                  help="Type of mutation to compare (against no mutations)")
     mutation_config.add_argument("--try-all", action="store_true", default=False,
                         help="Try all mutatnts in range [mutation, max_mutantion]?")
-    mutation_config.add_argument("-mm", "--max-mutation", type=int, default=380,
+    mutation_config.add_argument("-mm", "--max-mutation", type=int, default=MAX_MUTANT,
                                  help="Which mutant number to try up to?")
     mutation_config.add_argument("--panic-kills-interesting", action="store_true", default=False,
                                  help="Are panic kills interesting to the reducer?")
@@ -47,10 +53,10 @@ def parse_args() -> argparse.Namespace:
                                  help="Are compiler binary erroring uninteresting to the reducer?")
 
     parser.add_argument("--reduce-root", type=Path, required=False,
-                        default="reducer/reduce/mutations/",
+                        default=DEFAULT_REDUCE_ROOT,
                         help="Place to put the reduce folder")
     parser.add_argument("--template-script", type=Path, required=False,
-                        default="reducer/shell-script-templates/triggers_bug.sh",
+                        default=TEMPLATE_SCRIPT_PATH,
                         help="Place to put the reduce folder")
     parser.add_argument("--keep", action="store_true", default=False,
                         help="Keep created temp reduction folder")
@@ -62,10 +68,13 @@ def parse_args() -> argparse.Namespace:
     # default: if input-args doesn't exist, assume it's the .txt file with the same name as
     # `input_path`
     if not args.input_args_path:
-        input_name = args.input_path.name.rsplit('.', maxsplit=1)[0]
-        args.input_args_path = args.input_path.parent / f"{input_name}.txt"
+        args.input_args_path = get_default_args_path(args.input_path)
 
     return args
+
+def get_default_args_path(test_path: Path) -> Path:
+    test_name = test_path.name.rsplit('.', maxsplit=1)[0]
+    return test_path.parent / f"{test_name}.txt"
 
 class Detection(Enum):
     UNKNOWN = 0
@@ -113,35 +122,53 @@ def difference_detected(
     finally:
         # cleanup folder created
         if not keep:
-            shutil.rmtree(reduction_folder)    
+            shutil.rmtree(reduction_folder)
 
-def check_single(args: argparse.Namespace, mutant: int) -> Detection:
+@dataclass
+class TestContext:
+    compiler: str
+    input_path: Path
+    input_args_path: Path
+    panic_kill_is_interesting: bool
+    bin_err_is_interesting: bool
+    bin_timeout_is_interesting: bool
+    reduce_root: Path
+    template_script_path: Path
+    keep_folder: bool
+
+def get_context(args: argparse.Namespace) -> TestContext:
+    return TestContext(args.compiler, args.input_path, args.input_args_path,
+                       args.panic_kills_interesting, 
+                       not args.binary_error_uninteresting, not args.binary_error_uninteresting, 
+                       args.reduce_root, args.template_script, args.keep)
+
+def check_single(env: TestContext, mutant: int) -> Detection:
     # create a test case using the test script, compiler, and mutation settings.
     test_case = TestCase(
-        CompilerConfig("", "0", 0, args.compiler), 
-        CompilerConfig("", "0", mutant, args.compiler), 
-        args.input_path, 
-        args.input_args_path,
-        panic_kill_is_interesting=args.panic_kills_interesting,
-        bin_err_is_interesting=not args.binary_error_uninteresting,
-        bin_timeout_is_interesting=not args.binary_error_uninteresting
+        CompilerConfig("", "0", 0, env.compiler), 
+        CompilerConfig("", "0", mutant, env.compiler), 
+        env.input_path, 
+        env.input_args_path,
+        panic_kill_is_interesting=env.panic_kill_is_interesting,
+        bin_err_is_interesting=env.bin_err_is_interesting,
+        bin_timeout_is_interesting=env.bin_timeout_is_interesting
     )
     
     return difference_detected(
         test_case, 
-        ReductionEnv(args.reduce_root, args.template_script), 
-        keep=args.keep
+        ReductionEnv(env.reduce_root, env.template_script_path), 
+        keep=env.keep_folder
     )
 
-def check_all(args: argparse.Namespace, min_mutant: int, max_mutant: int) -> list[tuple[int, Detection]]:
+def check_all(env: TestContext, min_mutant: int, max_mutant: int, jobs: int = 8) -> list[tuple[int, Detection]]:
     """
-    Check if any of [args.mutation, max_mutant) mutants results in different code on the
-    test case {args.input_path, args.input_args_path} 
+    Check if any of [min_mutant, max_mutant] mutants results in different code on the
+    test case `env`
     """
     mutants_detected = []
-    with Pool(processes=8) as p:
+    with Pool(processes=jobs) as p:
         mutants = list(range(min_mutant, max_mutant+1))
-        async_results = [p.apply_async(check_single, (args, m)) for m in mutants]
+        async_results = [p.apply_async(check_single, (env, m)) for m in mutants]
 
         # get the results
         for m, result in zip(mutants, async_results):
@@ -156,10 +183,12 @@ def main() -> None:
     args = parse_args()
     # print(args)
 
+    env = get_context(args)
+
     if args.try_all:
-        print("mutants detected:", check_all(args, args.mutation, args.max_mutation))
+        print(f"mutants detected by {env.input_path}:", check_all(env, args.mutation, args.max_mutation))
     else:
-        print("mutant detection:", check_single(args, args.mutation))
+        print(f"mutant {args.mutation} detected by {env.input_path}:", check_single(env, args.mutation))
 
 if __name__ == '__main__':
     main()

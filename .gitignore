@@ -1,11 +1,11 @@
 dist
 .idea
 **/out_*
-rustsmith_validator/reduce/*
-!rustsmith_validator/reduce/.gitkeep
 
-mutation-test/*
-!mutation-test/**/*.py
-!mutation-test/**/*.txt
+mutation_test/**/*
+!mutation_test/**/*.py
+!mutation_test/**/*.txt
+
+reducer/reduce/mutations/file0_*/**/*
 
 **/__pycache__
