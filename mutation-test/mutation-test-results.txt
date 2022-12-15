@@ -1,8 +1,50 @@
 killed by outRust-100/file0/file0.rs:
 [(1, <Detection.BINARY: 3>), (12, <Detection.BINARY: 3>), (18, <Detection.BINARY: 3>), (20, <Detection.BINARY: 3>), (28, <Detection.BINARY: 3>), (43, <Detection.BINARY: 3>), (76, <Detection.BINARY: 3>), (84, <Detection.BINARY: 3>), (100, <Detection.BINARY: 3>), (138, <Detection.BINARY: 3>), (142, <Detection.BINARY: 3>), (224, <Detection.BINARY: 3>), (229, <Detection.BINARY: 3>), (232, <Detection.BINARY: 3>), (234, <Detection.BINARY: 3>), (235, <Detection.BINARY: 3>), (239, <Detection.BINARY: 3>), (240, <Detection.BINARY: 3>), (242, <Detection.BINARY: 3>), (267, <Detection.BINARY: 3>), (276, <Detection.BINARY: 3>), (279, <Detection.BINARY: 3>), (285, <Detection.BINARY: 3>), (286, <Detection.BINARY: 3>), (297, <Detection.BINARY: 3>), (315, <Detection.BINARY: 3>), (318, <Detection.BINARY: 3>), (319, <Detection.BINARY: 3>), (321, <Detection.BINARY: 3>), (322, <Detection.BINARY: 3>), (323, <Detection.TIMEOUT: 2>), (325, <Detection.BINARY: 3>), (326, <Detection.BINARY: 3>), (327, <Detection.BINARY: 3>), (331, <Detection.BINARY: 3>), (332, <Detection.BINARY: 3>), (333, <Detection.BINARY: 3>), (335, <Detection.BINARY: 3>), (336, <Detection.BINARY: 3>)]
 
+killed by outRust-102/file0/file0.rs:
+[]
+
+killed by outRust-168/file0/file0.rs:
+[(323, <Detection.TIMEOUT: 3>)]
+
+killed by outRust-215/file0/file0.rs:
+[(229, <Detection.BINARY: 4>), (297, <Detection.BINARY: 4>), (323, <Detection.TIMEOUT: 3>), (325, <Detection.BINARY: 4>)]
+
+killed by outRust-215/outRust/file0/file0.rs:
+[(229, <Detection.BINARY: 4>), (297, <Detection.BINARY: 4>), (323, <Detection.TIMEOUT: 3>), (325, <Detection.BINARY: 4>)]
+
+killed by outRust-348/outRust/file0/file0.rs:
+[]
+
+killed by outRust-141/outRust/file0/file0.rs:
+[(229, <Detection.BINARY: 4>), (297, <Detection.BINARY: 4>), (323, <Detection.TIMEOUT: 3>), (325, <Detection.BINARY: 4>)]
+
+killed by outRust-57/outRust/file0/file0.rs:
+[(323, <Detection.TIMEOUT: 3>)]
+
+killed by outRust-373/outRust/file0/file0.rs:
+[(229, <Detection.BINARY: 4>), (297, <Detection.BINARY: 4>), (323, <Detection.TIMEOUT: 3>), (325, <Detection.BINARY: 4>)]
+
+killed by outRust-252/file0/file0.rs:
+[]
+
+killed by outRust-237/file0/file0.rs:
+[]
+
 killed by outRust-12/file0/file0.rs:
 [12, 18, 20, 28, 43]
+
+killed by outRust-269/file0/file0.rs:
+[(323, <Detection.TIMEOUT: 3>)]
+
+killed by outRust-223/file0/file0.rs:
+[(323, <Detection.TIMEOUT: 3>)]
+
+killed by outRust-253/file0/file0.rs:
+[(229, <Detection.BINARY: 4>), (267, <Detection.BINARY: 4>), (297, <Detection.BINARY: 4>), (322, <Detection.BINARY: 4>), (323, <Detection.TIMEOUT: 3>), (325, <Detection.BINARY: 4>)]
+
+killed by outRust-265/file0/file0.rs:
+[(229, <Detection.BINARY: 4>), (297, <Detection.BINARY: 4>), (323, <Detection.TIMEOUT: 3>), (325, <Detection.BINARY: 4>), (338, <Detection.BINARY: 4>)]
 
 killed by outRust-12/outRust/file0/file0.rs:
 [(229, <Detection.BINARY: 4>), (297, <Detection.BINARY: 4>), (322, <Detection.BINARY: 4>), (323, <Detection.TIMEOUT: 3>), (325, <Detection.BINARY: 4>)]
@@ -15,7 +57,9 @@ killed by outRust-307/file0/file0.rs:
 
 By official test suite:
 Uncovered mutations:
-328, 316
+328
 
-Covered mutations:
-338 (core), 224 (alloc)
+Covered mutations (fresh):
+338 (core), 224 (alloc), 229 (debuginfo-gdb), 267 (debuginfo-gdb), 322 (debuginfo-gdb), 325 (rustdoc)
+297 (ui fails on fres build; debuginfo but hangs!), 323 (ui but hangs!)
+316 (mir-opt)

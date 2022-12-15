@@ -20,7 +20,9 @@ class TestCase:
     path: Path
     cli_args_path: Optional[Path] = None # default: no args
     time_limit: float = 0.10
-    panic_kill_is_bug: bool = False
+    panic_kill_is_interesting: bool = False
+    bin_err_is_interesting: bool = True
+    bin_timeout_is_interesting: bool = True
 
 @dataclass
 class ReductionEnv:
@@ -88,17 +90,19 @@ def prepare_reduce_folder(
     script = ""
     with environment.creduce_script_template_path.open() as f:
         script = f.read().format(
-            arguments         = arguments,
-            rustc_v1          = test_case.v1_config.version,
-            opt_1             = test_case.v1_config.opt_flag,
-            mutation_1        = test_case.v1_config.mutation,
-            rustc_v2          = test_case.v2_config.version,
-            opt_2             = test_case.v2_config.opt_flag,
-            mutation_2        = test_case.v2_config.mutation,
-            time_limit        = test_case.time_limit,
-            rustc_binary      = test_case.v1_config.compiler_path,
-            rs_filename       = test_case_path.name,
-            panic_kill_return = 0 if test_case.panic_kill_is_bug else 1
+            arguments          = arguments,
+            rustc_v1           = test_case.v1_config.version,
+            opt_1              = test_case.v1_config.opt_flag,
+            mutation_1         = test_case.v1_config.mutation,
+            rustc_v2           = test_case.v2_config.version,
+            opt_2              = test_case.v2_config.opt_flag,
+            mutation_2         = test_case.v2_config.mutation,
+            time_limit         = test_case.time_limit,
+            rustc_binary       = test_case.v1_config.compiler_path,
+            rs_filename        = test_case_path.name,
+            panic_kill_return  = 0 if test_case.panic_kill_is_interesting else 2,
+            bin_err_return     = 0 if test_case.bin_err_is_interesting else 3,
+            bin_timeout_return = 0 if test_case.bin_timeout_is_interesting else 4
         )
         assert test_case.v1_config.compiler_path == test_case.v2_config.compiler_path
     

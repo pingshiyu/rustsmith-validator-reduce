@@ -41,17 +41,20 @@ def parse_args() -> argparse.Namespace:
                         help="Try all mutatnts in range [mutation, max_mutantion]?")
     mutation_config.add_argument("-mm", "--max-mutation", type=int, default=380,
                                  help="Which mutant number to try up to?")
+    mutation_config.add_argument("--panic-kills-interesting", action="store_true", default=False,
+                                 help="Are panic kills interesting to the reducer?")
+    mutation_config.add_argument("--binary-error-uninteresting", action="store_true", default=False,
+                                 help="Are compiler binary erroring uninteresting to the reducer?")
 
     parser.add_argument("--reduce-root", type=Path, required=False,
-                        default="reducer/reduce",
+                        default="reducer/reduce/mutations/",
                         help="Place to put the reduce folder")
     parser.add_argument("--template-script", type=Path, required=False,
                         default="reducer/shell-script-templates/triggers_bug.sh",
                         help="Place to put the reduce folder")
     parser.add_argument("--keep", action="store_true", default=False,
                         help="Keep created temp reduction folder")
-    parser.add_argument("--accept-panic-kills", action="store_true", default=False,
-                        help="Accept panic kills as a bug?")
+    
 
     # do a bit more parsing once inputs are specified
     args = parser.parse_args()
@@ -66,18 +69,24 @@ def parse_args() -> argparse.Namespace:
 
 class Detection(Enum):
     UNKNOWN = 0
+    DETECTED = auto()
     UNDETECTED = auto() # bug not present
     PANIC = auto()
-    TIMEOUT = auto()
-    BINARY = auto()
+    COMPILE_TIMEOUT = auto()
+    BINARY_ERRORS = auto()
+    BINARY_TIMEOUT = auto()
 
 def detection(return_code: int) -> Detection:
     if return_code == 0:
-        return Detection.BINARY
+        return Detection.DETECTED
     elif return_code == 1:
         return Detection.UNDETECTED
     elif return_code == 2:
         return Detection.PANIC
+    elif return_code == 3:
+        return Detection.BINARY_ERRORS
+    elif return_code == 4:
+        return Detection.BINARY_TIMEOUT
     else:
         return Detection.UNKNOWN
 
@@ -100,7 +109,7 @@ def difference_detected(
         )
         return detection(result.returncode)
     except subprocess.TimeoutExpired:
-        return Detection.TIMEOUT
+        return Detection.COMPILE_TIMEOUT
     finally:
         # cleanup folder created
         if not keep:
@@ -113,7 +122,9 @@ def check_single(args: argparse.Namespace, mutant: int) -> Detection:
         CompilerConfig("", "0", mutant, args.compiler), 
         args.input_path, 
         args.input_args_path,
-        panic_kill_is_bug=args.accept_panic_kills
+        panic_kill_is_interesting=args.panic_kills_interesting,
+        bin_err_is_interesting=not args.binary_error_uninteresting,
+        bin_timeout_is_interesting=not args.binary_error_uninteresting
     )
     
     return difference_detected(
