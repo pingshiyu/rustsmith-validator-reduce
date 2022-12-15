@@ -20,11 +20,12 @@ class TestCase:
     path: Path
     cli_args_path: Optional[Path] = None # default: no args
     time_limit: float = 0.10
+    panic_kill_is_bug: bool = False
 
 @dataclass
 class ReductionEnv:
     # where to put the reduction folders
-    reduction_root: Path = Path("reducer/reduce")       
+    reduction_root: Path = Path("reducer/reduce")
     # template to generate interesting.sh script
     creduce_script_template_path: Path = Path("reducer/shell-script-templates/triggers_bug.sh")
 
@@ -48,7 +49,7 @@ def _create_reduce_folder(test_case: TestCase, folder_root: Path, retries : int 
     try: 
         print("folder created:", reduce_folder)
         reduce_folder.mkdir(parents=True, exist_ok=False)
-    except FileExistsError as e:
+    except FileExistsError:
         print("folder name collision:", reduce_folder)
         if retries > 0: 
             _create_reduce_folder(test_case, folder_root, retries - 1) # try again
@@ -87,16 +88,17 @@ def prepare_reduce_folder(
     script = ""
     with environment.creduce_script_template_path.open() as f:
         script = f.read().format(
-            arguments    = arguments,
-            rustc_v1     = test_case.v1_config.version,
-            opt_1        = test_case.v1_config.opt_flag,
-            mutation_1   = test_case.v1_config.mutation,
-            rustc_v2     = test_case.v2_config.version,
-            opt_2        = test_case.v2_config.opt_flag,
-            mutation_2   = test_case.v2_config.mutation,
-            time_limit   = test_case.time_limit,
-            rustc_binary = test_case.v1_config.compiler_path,
-            rs_filename  = test_case_path.name
+            arguments         = arguments,
+            rustc_v1          = test_case.v1_config.version,
+            opt_1             = test_case.v1_config.opt_flag,
+            mutation_1        = test_case.v1_config.mutation,
+            rustc_v2          = test_case.v2_config.version,
+            opt_2             = test_case.v2_config.opt_flag,
+            mutation_2        = test_case.v2_config.mutation,
+            time_limit        = test_case.time_limit,
+            rustc_binary      = test_case.v1_config.compiler_path,
+            rs_filename       = test_case_path.name,
+            panic_kill_return = 0 if test_case.panic_kill_is_bug else 1
         )
         assert test_case.v1_config.compiler_path == test_case.v2_config.compiler_path
     

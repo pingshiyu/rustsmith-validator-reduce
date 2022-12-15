@@ -9,32 +9,32 @@
 ################################ ARGUMENTS ################################
 
 # time limit in seconds
-TIME_LIMIT={time_limit}
+TIME_LIMIT=0.1
 
 # cli args
-PROGRAM_ARGS="{arguments}"
+PROGRAM_ARGS="17067127360882943664 d9U5ncX30dQMpn5HHZgmiJGwUJdzTVFwmd2GoW3PFItxW0rHZG9ZKdnusGHi2JMBdXYtIcg0x2n 22005 -891334657 29 true 156 17463 0.7748567219176261 0.0052264333 3846700709 -8381978202322681228 127141204043323331605169645782652571474 13222500411778182476107027075302741592 12121152616079819554"
 
 # rust compiler verions
-RUSTC_V1="{rustc_v1}"
-RUSTC_V2="{rustc_v2}"
+RUSTC_V1=""
+RUSTC_V2=""
 
 # these two options should result in different code being generated
-OPT1="{opt_1}"
-OPT2="{opt_2}"
+OPT1="0"
+OPT2="0"
 
 # custom rustc binary
-RUSTC="{rustc_binary}"
+RUSTC="/home/jacob/projects/rustsmith/rust-mutcov/rust-build/bin/rustc"
 
 # mutations (only works with binary that accepts mutations)
-MUTATION1="{mutation_1}"
-MUTATION2="{mutation_2}"
+MUTATION1="0"
+MUTATION2="229"
 
 # return value of panic kills (are these valid bugs? 0 => valid, not 0 => invalid)
-PANIC_KILL_RETURN={panic_kill_return}
+PANIC_KILL_RETURN=1
 
 ###########################################################################
 
-run_with_timeout() {{
+run_with_timeout() {
     # arg1: command to run with timeout
     timeout $TIME_LIMIT $1
     local EXIT_CODE=$?
@@ -44,16 +44,16 @@ run_with_timeout() {{
         echo "exited with code $EXIT_CODE"
     fi
     return 0
-}}
+}
 
-main() {{
+main() {
     # compile with the two optimisation flags
-    BIN1="out_${{RUSTC_V1}}_O${{OPT1}}_MUT${{MUTATION1}}"
-    BIN2="out_${{RUSTC_V2}}_O${{OPT2}}_MUT${{MUTATION2}}"
+    BIN1="out_${RUSTC_V1}_O${OPT1}_MUT${MUTATION1}"
+    BIN2="out_${RUSTC_V2}_O${OPT2}_MUT${MUTATION2}"
 
     echo "Compiling the two files... $BIN1 and $BIN2"
-    RUSTUP_TOOLCHAIN=$RUSTC_V1 RUSTC_MUTATION_NUMBER=$MUTATION1 $RUSTC -C opt-level=$OPT1 {rs_filename} -o $BIN1
-    RUSTUP_TOOLCHAIN=$RUSTC_V2 RUSTC_MUTATION_NUMBER=$MUTATION2 $RUSTC -C opt-level=$OPT2 {rs_filename} -o $BIN2
+    RUSTUP_TOOLCHAIN=$RUSTC_V1 RUSTC_MUTATION_NUMBER=$MUTATION1 $RUSTC -C opt-level=$OPT1 test-case.rs -o $BIN1
+    RUSTUP_TOOLCHAIN=$RUSTC_V2 RUSTC_MUTATION_NUMBER=$MUTATION2 $RUSTC -C opt-level=$OPT2 test-case.rs -o $BIN2
 
     # check successful compilation: exit code 2 if compilation unsuccessful
     [ ! -f $BIN1 ]
@@ -61,7 +61,7 @@ main() {{
     [ ! -f $BIN2 ]
     BIN2_EXISTS=$?
     if [ "$BIN1_EXISTS" -ne "$BIN2_EXISTS" ]; then
-        echo "compilation failed for one of the files"
+        echo "compilation failed for 1 file"
         exit $PANIC_KILL_RETURN
     fi
 
@@ -78,6 +78,6 @@ main() {{
         echo "Bug disappeared, oh no!"
         exit 1 # bug no longer exists
     fi
-}}
+}
 
 main

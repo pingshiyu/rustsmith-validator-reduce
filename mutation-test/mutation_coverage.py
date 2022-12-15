@@ -8,13 +8,12 @@ import subprocess
 import argparse
 import shutil
 from multiprocessing import Pool
-import multiprocessing.context
 from enum import Enum, auto
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        prog="python -m mutation-test.check_mutant",
-        description="Checks files against mutations"
+        prog="python -m mutation-test.mutation_coverage",
+        description="Computes mutation coverage of test cases"
     )
 
     test_case_config = parser.add_argument_group('Test Case Specification')
@@ -50,7 +49,9 @@ def parse_args() -> argparse.Namespace:
                         default="reducer/shell-script-templates/triggers_bug.sh",
                         help="Place to put the reduce folder")
     parser.add_argument("--keep", action="store_true", default=False,
-                        help="Keep created temp reduction folder")    
+                        help="Keep created temp reduction folder")
+    parser.add_argument("--accept-panic-kills", action="store_true", default=False,
+                        help="Accept panic kills as a bug?")
 
     # do a bit more parsing once inputs are specified
     args = parser.parse_args()
@@ -64,9 +65,21 @@ def parse_args() -> argparse.Namespace:
     return args
 
 class Detection(Enum):
-    UNDETECTED = 1
+    UNKNOWN = 0
+    UNDETECTED = auto() # bug not present
+    PANIC = auto()
     TIMEOUT = auto()
     BINARY = auto()
+
+def detection(return_code: int) -> Detection:
+    if return_code == 0:
+        return Detection.BINARY
+    elif return_code == 1:
+        return Detection.UNDETECTED
+    elif return_code == 2:
+        return Detection.PANIC
+    else:
+        return Detection.UNKNOWN
 
 def difference_detected(
     test_case: TestCase,
@@ -85,7 +98,7 @@ def difference_detected(
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
             timeout=timeout
         )
-        return Detection.BINARY if result.returncode == 0 else Detection.UNDETECTED
+        return detection(result.returncode)
     except subprocess.TimeoutExpired:
         return Detection.TIMEOUT
     finally:
@@ -99,7 +112,8 @@ def check_single(args: argparse.Namespace, mutant: int) -> Detection:
         CompilerConfig("", "0", 0, args.compiler), 
         CompilerConfig("", "0", mutant, args.compiler), 
         args.input_path, 
-        args.input_args_path
+        args.input_args_path,
+        panic_kill_is_bug=args.accept_panic_kills
     )
     
     return difference_detected(
@@ -122,7 +136,7 @@ def check_all(args: argparse.Namespace, min_mutant: int, max_mutant: int) -> lis
         for m, result in zip(mutants, async_results):
             detected = result.get()
 
-            if detected != Detection.UNDETECTED:
+            if (detected != Detection.UNDETECTED) and (detected != Detection.UNKNOWN):
                 mutants_detected.append((m, detected))
 
     return mutants_detected
