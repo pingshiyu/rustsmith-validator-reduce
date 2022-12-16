@@ -78,20 +78,20 @@ def get_default_args_path(test_path: Path) -> Path:
 
 class Detection(Enum):
     UNKNOWN = 0
-    DETECTED = auto() # aka BINARY_OUTPUT
     UNDETECTED = auto() # bug not present
-    PANIC = auto()
+    COMPILE_PANIC = auto()
     COMPILE_TIMEOUT = auto()
+    BINARY_OUTPUT = auto() # aka DETECTED
     BINARY_ERRORS = auto()
     BINARY_TIMEOUT = auto()
 
 def _return_code_to_detection(return_code: int) -> Detection:
     if return_code == 0:
-        return Detection.DETECTED
+        return Detection.BINARY_OUTPUT
     elif return_code == 1:
         return Detection.UNDETECTED
     elif return_code == 2:
-        return Detection.PANIC
+        return Detection.COMPILE_PANIC
     elif return_code == 3:
         return Detection.BINARY_ERRORS
     elif return_code == 4:
