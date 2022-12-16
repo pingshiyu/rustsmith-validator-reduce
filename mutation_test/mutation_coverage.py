@@ -85,7 +85,7 @@ class Detection(Enum):
     BINARY_ERRORS = auto()
     BINARY_TIMEOUT = auto()
 
-def detection(return_code: int) -> Detection:
+def _return_code_to_detection(return_code: int) -> Detection:
     if return_code == 0:
         return Detection.DETECTED
     elif return_code == 1:
@@ -116,7 +116,7 @@ def difference_detected(
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
             timeout=timeout
         )
-        return detection(result.returncode)
+        return _return_code_to_detection(result.returncode)
     except subprocess.TimeoutExpired:
         return Detection.COMPILE_TIMEOUT
     finally:
@@ -136,7 +136,7 @@ class TestContext:
     template_script_path: Path
     keep_folder: bool
 
-def get_context(args: argparse.Namespace) -> TestContext:
+def _get_context(args: argparse.Namespace) -> TestContext:
     return TestContext(args.compiler, args.input_path, args.input_args_path,
                        args.panic_kills_interesting, 
                        not args.binary_error_uninteresting, not args.binary_error_uninteresting, 
@@ -160,7 +160,12 @@ def check_single(env: TestContext, mutant: int) -> Detection:
         keep=env.keep_folder
     )
 
-def check_all(env: TestContext, min_mutant: int, max_mutant: int, jobs: int = 8) -> list[tuple[int, Detection]]:
+def check_all(
+    env: TestContext, 
+    min_mutant: int, max_mutant: int, 
+    jobs: int = 8, 
+    timeout_early_stop_pct: float = 0.50,
+    timeout_check_from: int = 10) -> list[tuple[int, Detection]]:
     """
     Check if any of [min_mutant, max_mutant] mutants results in different code on the
     test case `env`
@@ -170,9 +175,20 @@ def check_all(env: TestContext, min_mutant: int, max_mutant: int, jobs: int = 8)
         mutants = list(range(min_mutant, max_mutant+1))
         async_results = [p.apply_async(check_single, (env, m)) for m in mutants]
 
+        # keep running tally of % of failed cases. stop early if we have too many timeouts
+        timeouts = 0
+
         # get the results
         for m, result in zip(mutants, async_results):
             detected = result.get()
+
+            if (detected == Detection.COMPILE_TIMEOUT):
+                timeouts += 1
+                
+                # calculate % of failed here. stop early if greater % than threshold
+                if ((m+1) > timeout_check_from) and ((timeouts / (m+1)) > timeout_early_stop_pct):
+                    mutants_detected.append((-1, Detection.UNKNOWN)) # indicate early stop
+                    break
 
             if (detected != Detection.UNDETECTED) and (detected != Detection.UNKNOWN):
                 mutants_detected.append((m, detected))
@@ -183,7 +199,7 @@ def main() -> None:
     args = parse_args()
     # print(args)
 
-    env = get_context(args)
+    env = _get_context(args)
 
     if args.try_all:
         print(f"mutants detected by {env.input_path}:", check_all(env, args.mutation, args.max_mutation))

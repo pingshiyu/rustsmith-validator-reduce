@@ -15,11 +15,15 @@ CLEAR_LINE_CHAR = "\033[2K"
 
 def compute_mutation_coverage(results: shelve.Shelf, root: Path) -> None:
     for i, file in enumerate(root.rglob("*.rs")):
+        # dont redo what we've already calculated
+        if (i+1) < 32:
+            continue
+
         print(f"{CLEAR_LINE_CHAR}Computing coverage for file #{i+1}: {file}", end="\r")
         env = TestContext(MUTATED_RUSTC_PATH, file, get_default_args_path(file), 
                           False, False, False, 
                           DEFAULT_REDUCE_ROOT, TEMPLATE_SCRIPT_PATH, False)
-        results[file.as_posix()] = check_all(env, 1, MAX_MUTANT, jobs=8)
+        results[file.as_posix()] = check_all(env, 1, MAX_MUTANT, jobs=12)
 
 def main() -> None: 
     """
