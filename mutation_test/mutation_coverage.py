@@ -78,7 +78,7 @@ def get_default_args_path(test_path: Path) -> Path:
 
 class Detection(Enum):
     UNKNOWN = 0
-    DETECTED = auto() # aka OUTPUT
+    DETECTED = auto() # aka BINARY_OUTPUT
     UNDETECTED = auto() # bug not present
     PANIC = auto()
     COMPILE_TIMEOUT = auto()

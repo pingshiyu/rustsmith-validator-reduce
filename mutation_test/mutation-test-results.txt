@@ -57,10 +57,10 @@ killed by outRust-307/file0/file0.rs:
 
 By official test suite:
 Uncovered mutations:
-328, 355 (?)
+328, 355, 354
 
 Covered mutations (fresh):
 338 (core), 224 (alloc), 229 (debuginfo-gdb), 267 (debuginfo-gdb), 322 (debuginfo-gdb), 325 (rustdoc)
 297 (ui fails on fres build; debuginfo but hangs!), 323 (ui but hangs!)
 316 (mir-opt), 
-45 (ui), 48 (ui), 100 (ui), 5 (codegen), 2 (mir-opt)
+45 (ui), 48 (ui), 100 (ui), 5 (codegen), 2 (mir-opt), 139 (ui)
