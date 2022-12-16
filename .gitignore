@@ -5,6 +5,7 @@ dist
 mutation_test/**/*
 !mutation_test/**/*.py
 !mutation_test/**/*.txt
+!mutation_test/**/*.ipynb
 
 reducer/reduce/mutations/file0_*/**/*
 
