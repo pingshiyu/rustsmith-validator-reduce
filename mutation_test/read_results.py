@@ -5,7 +5,6 @@ from typing import Dict
 
 import matplotlib.pyplot as plt
 import pandas as pd
-import csv
 from collections import Counter
 
 from mutation_test.mutation_coverage import Detection

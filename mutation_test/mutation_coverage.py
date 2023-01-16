@@ -81,21 +81,22 @@ class Detection(Enum):
     UNDETECTED = auto() # bug not present
     COMPILE_PANIC = auto()
     COMPILE_TIMEOUT = auto()
-    BINARY_OUTPUT = auto() # aka DETECTED
-    BINARY_ERRORS = auto()
-    BINARY_TIMEOUT = auto()
+    BINARY_DIFFERENCE = auto()
+    OUTPUT_ERRORS = auto()
+    OUTPUT_TIMEOUT = auto()
+    OUTPUT_DIFFERENCE = auto() # aka DETECTED
 
 def _return_code_to_detection(return_code: int) -> Detection:
     if return_code == 0:
-        return Detection.BINARY_OUTPUT
+        return Detection.OUTPUT_DIFFERENCE
     elif return_code == 1:
         return Detection.UNDETECTED
     elif return_code == 2:
         return Detection.COMPILE_PANIC
     elif return_code == 3:
-        return Detection.BINARY_ERRORS
+        return Detection.OUTPUT_ERRORS
     elif return_code == 4:
-        return Detection.BINARY_TIMEOUT
+        return Detection.OUTPUT_TIMEOUT
     else:
         return Detection.UNKNOWN
 

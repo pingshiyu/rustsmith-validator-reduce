@@ -15,7 +15,7 @@ class MutationResult(Enum):
 """
 
 if __name__ == '__main__':
-    db = dbm.gnu.open('./my_store')
+    db = dbm.gnu.open('./mutation_test/mayank-mutation-results')
     
     mutant_killed = {}
     for k in db.keys():
