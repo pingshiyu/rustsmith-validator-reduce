@@ -3,7 +3,7 @@ from typing import Dict
 from pathlib import Path
 
 MUTATED_RUSTC_PATH = "/home/jacob/projects/rustsmith/rust-mutcov/rust-build/bin/rustc"
-TEMPLATE_SCRIPT_PATH = Path("reducer/shell-script-templates/triggers_bug.sh")
+TEMPLATE_SCRIPT_PATH = Path("reducer/shell-script-templates/mutation_detection.sh")
 DEFAULT_REDUCE_ROOT = Path("reducer/reduce/mutations/")
 MAX_MUTANT = 380
 

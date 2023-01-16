@@ -27,6 +27,9 @@ def compute_rustsmith_mut_coverage(results: shelve.Shelf, root: Path) -> None:
 
 def compute_rustc_mut_coverage(results: shelve.Shelf, root: Path) -> None:
     for i, file in enumerate(root.rglob("*.rs")):
+        if i < 33: 
+            continue
+
         print(f"{CLEAR_LINE_CHAR}Computing coverage for file #{i+1}: {file}", end="\r")
         env = TestContext(MUTATED_RUSTC_PATH, file, None, 
                           DEFAULT_REDUCE_ROOT, TEMPLATE_SCRIPT_PATH, False,
@@ -45,7 +48,7 @@ def main() -> None:
 
     # Rustc evaluations
     with shelve.open("mutation_test/rustc_cov_results/store") as results:
-        compute_rustsmith_mut_coverage(results, Path("/home/jacob/projects/rustsmith/rust-mutcov/src/test/mir-opt"))
+        compute_rustc_mut_coverage(results, Path("/home/jacob/projects/rustsmith/rust-mutcov/src/test/mir-opt"))
 
 if __name__ == "__main__":
     main()

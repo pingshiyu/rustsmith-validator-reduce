@@ -10,6 +10,7 @@ import argparse
 import shutil
 from multiprocessing import Pool
 from dataclasses import dataclass
+from typing import Optional
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -19,9 +20,12 @@ def parse_args() -> argparse.Namespace:
 
     test_case_config = parser.add_argument_group('Test Case Specification')
     test_case_config.add_argument("-i", "--input-path", type=Path, required=True,
-                            help="Path input script triggering the test_case.")
+                                  help="Path input script triggering the test_case.")
+    test_case_config.add_argument("--no-input-args", action="store_true",
+                                  help="This file does not have any input args.")
     test_case_config.add_argument("-a", "--input-args-path", type=Path, required=False,
-                            help="Path to the cmd args of the input test case.")
+                                  help="Path to the cmd args of the input test case.")
+    
 
     compiler_config = test_case_config.add_mutually_exclusive_group()
     compiler_config.add_argument("-c", "--compiler", type=str,
@@ -61,9 +65,9 @@ def parse_args() -> argparse.Namespace:
     # do a bit more parsing once inputs are specified
     args = parser.parse_args()
 
-    # default: if input-args doesn't exist, assume it's the .txt file with the same name as
-    # `input_path`
-    if not args.input_args_path:
+    # default: if input-args doesn't exist, and input args are expected, assume it's the .txt 
+    # file with the same name as `input_path`
+    if (not args.no_input_args) and (not args.input_args_path):
         args.input_args_path = get_default_args_path(args.input_path)
 
     return args
@@ -101,13 +105,13 @@ def difference_detected(
 class TestContext:
     compiler: str
     input_path: Path
-    input_args_path: Path
+    input_args_path: Optional[Path]
     reduce_root: Path
     template_script_path: Path
     keep_folder: bool
-    panic_kill_is_interesting: bool      # TODO: do something with these values here
-    bin_diff_is_interesting: bool        # TODO: do something with these values here
-    output_error_is_interesting: bool    # TODO: do something with these values here
+    panic_kill_is_interesting: bool
+    bin_diff_is_interesting: bool
+    output_error_is_interesting: bool 
 
 def _get_context(args: argparse.Namespace) -> TestContext:
     return TestContext(args.compiler, args.input_path, args.input_args_path,

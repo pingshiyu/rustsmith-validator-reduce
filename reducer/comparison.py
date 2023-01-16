@@ -6,6 +6,9 @@ from pathlib import Path
 import shutil
 import pprint as pp
 
+COMPILE_TIMEOUT = 20.00
+OUTPUT_TIMEOUT = 1.00
+
 @dataclass
 class CompilerConfig:
     version: str
@@ -19,8 +22,8 @@ class TestCase:
     v2_config: CompilerConfig
     path: Path
     cli_args_path: Optional[Path] = None # default: no args
-    time_limit_compile: float = 10.0
-    time_limit_bin: float = 0.10
+    time_limit_compile: float = COMPILE_TIMEOUT
+    time_limit_bin: float = OUTPUT_TIMEOUT
 
 @dataclass
 class ReductionEnv:
