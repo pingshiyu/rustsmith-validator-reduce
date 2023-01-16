@@ -19,6 +19,10 @@ class Detection(Enum):
     BINARY_TIMEOUT = auto()
 
 def read_results(store_path: Path) -> Dict:
+    """
+    Reads a coverage Dict of the type:
+        string -> [Any]
+    """
     coverage = {}
     with shelve.open(str(store_path)) as results:
         errors = 0
@@ -31,6 +35,21 @@ def read_results(store_path: Path) -> Dict:
         
         print("Errors:", errors)
     return coverage
+
+def transpose_coverage_results(coverage: Dict) -> Dict:
+    """
+    Converts a coverage record of mapping:
+        filename -> [(mutation, Detection)]
+    Into a mapping:
+        mutation -> [(filename, Detection)]
+    """
+    coverage_t = {}
+    for file, kills in coverage.items():
+        if not kills or kills[-1][0] == -1: # no kills or aborted due to too many timeouts
+            continue
+        for mutant, kill_method in kills:
+            coverage_t[mutant] = coverage_t.get(mutant, []) + [(file, kill_method)]
+    return coverage_t
 
 def summarize_dict(data: dict):
     """

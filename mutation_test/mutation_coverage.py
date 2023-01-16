@@ -2,20 +2,14 @@
 cmd line interface to check if the {rust-script, compilers} test case demonstrates mutation-differential on mutation x.
 """
 from reducer.comparison import CompilerConfig, TestCase, ReductionEnv, prepare_reduce_folder
+from mutation_test.settings import MUTATED_RUSTC_PATH, MAX_MUTANT, DEFAULT_REDUCE_ROOT, TEMPLATE_SCRIPT_PATH, Detection, return_code_to_detection, get_kill_return_values
 
 from pathlib import Path
 import subprocess
 import argparse
 import shutil
 from multiprocessing import Pool
-from enum import Enum, auto
 from dataclasses import dataclass
-
-MUTATED_RUSTC_PATH = "/home/jacob/projects/rustsmith/rust-mutcov/rust-build/bin/rustc"
-TEMPLATE_SCRIPT_PATH = Path("reducer/shell-script-templates/triggers_bug.sh")
-DEFAULT_REDUCE_ROOT = Path("reducer/reduce/mutations/")
-MAX_MUTANT = 380
-
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -76,30 +70,6 @@ def get_default_args_path(test_path: Path) -> Path:
     test_name = test_path.name.rsplit('.', maxsplit=1)[0]
     return test_path.parent / f"{test_name}.txt"
 
-class Detection(Enum):
-    UNKNOWN = 0
-    UNDETECTED = auto() # bug not present
-    COMPILE_PANIC = auto()
-    COMPILE_TIMEOUT = auto()
-    BINARY_DIFFERENCE = auto()
-    OUTPUT_ERRORS = auto()
-    OUTPUT_TIMEOUT = auto()
-    OUTPUT_DIFFERENCE = auto() # aka DETECTED
-
-def _return_code_to_detection(return_code: int) -> Detection:
-    if return_code == 0:
-        return Detection.OUTPUT_DIFFERENCE
-    elif return_code == 1:
-        return Detection.UNDETECTED
-    elif return_code == 2:
-        return Detection.COMPILE_PANIC
-    elif return_code == 3:
-        return Detection.OUTPUT_ERRORS
-    elif return_code == 4:
-        return Detection.OUTPUT_TIMEOUT
-    else:
-        return Detection.UNKNOWN
-
 def difference_detected(
     test_case: TestCase,
     env: ReductionEnv,
@@ -117,7 +87,7 @@ def difference_detected(
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
             timeout=timeout
         )
-        return _return_code_to_detection(result.returncode)
+        return return_code_to_detection(result.returncode)
     except subprocess.TimeoutExpired:
         return Detection.COMPILE_TIMEOUT
     finally:
@@ -130,9 +100,9 @@ class TestContext:
     compiler: str
     input_path: Path
     input_args_path: Path
-    panic_kill_is_interesting: bool
-    bin_err_is_interesting: bool
-    bin_timeout_is_interesting: bool
+    panic_kill_is_interesting: bool     # TODO: do something with these values here
+    bin_err_is_interesting: bool        # TODO: do something with these values here
+    bin_timeout_is_interesting: bool    # TODO: do something with these values here
     reduce_root: Path
     template_script_path: Path
     keep_folder: bool
@@ -150,14 +120,11 @@ def check_single(env: TestContext, mutant: int) -> Detection:
         CompilerConfig("", "0", mutant, env.compiler), 
         env.input_path, 
         env.input_args_path,
-        panic_kill_is_interesting=env.panic_kill_is_interesting,
-        bin_err_is_interesting=env.bin_err_is_interesting,
-        bin_timeout_is_interesting=env.bin_timeout_is_interesting
     )
     
     return difference_detected(
         test_case, 
-        ReductionEnv(env.reduce_root, env.template_script_path), 
+        ReductionEnv(get_kill_return_values(), env.reduce_root, env.template_script_path), 
         keep=env.keep_folder
     )
 

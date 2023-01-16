@@ -41,13 +41,15 @@ def mutant_kill_strength(mutation_number: int, rustcm_path: str, file_path: str,
     """
     subprocess.run("rm out out-mut".split(" "))
 
+    flags = "-Zmir-opt-level=4 -Copt-level=1"
+    compile_command = f"{rustcm_path} {flags} {file_path} -o out"
+
     ### 1. Compile with rustc(m)
     mutation_env = os.environ.copy()
     mutation_env["RUSTC_MUTATION_NUMBER"] = f"{mutation_number}"
-    mut_compile_command = f"{rustcm_path} -Zmir-opt-level=4 {file_path} -o out"
     try:
         mut_compile_result = subprocess.run(
-            mut_compile_command.split(" "),
+            compile_command.split(" "),
             timeout=10.0,
             env=mutation_env,
             stdout=subprocess.PIPE,
@@ -61,7 +63,7 @@ def mutant_kill_strength(mutation_number: int, rustcm_path: str, file_path: str,
 
     compile_env = os.environ.copy()
     compile_env["RUSTC_MUTATION_NUMBER"] = "-1"
-    compile_command = f"{rustcm_path} -Zmir-opt-level=4 {file_path} -o out"
+    # compiles to out
     compile_result = subprocess.run(
         compile_command.split(" "), timeout=10.0, env=compile_env, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )

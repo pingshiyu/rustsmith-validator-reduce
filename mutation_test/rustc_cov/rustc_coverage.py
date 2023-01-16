@@ -18,7 +18,7 @@ def evaluate_test_cases(folder_root: str, rustc_m_location: str, storage: shelve
     rs_files = [fp for fp in glob.glob(f"{folder_root}/**/*.rs")]
 
     print(len(rs_files))
-    for mutation_no in range(272, 381):
+    for mutation_no in range(324, 381):
         mutation_key = str(mutation_no)
         storage[mutation_key] = []
         
@@ -40,7 +40,7 @@ def evaluate_test_cases(folder_root: str, rustc_m_location: str, storage: shelve
 
 
 if __name__ == "__main__":
-    with shelve.open("mutation_test/rustc_cov/results/store") as store: 
+    with shelve.open("mutation_test/rustc_cov/results_/store") as store: 
         evaluate_test_cases(
             "/home/jacob/projects/rustsmith/rust-mutcov/src/test/mir-opt",
             "/home/jacob/projects/rustsmith/rust-mutcov/rust-build/bin/rustc",
