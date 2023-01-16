@@ -13,7 +13,7 @@ import shelve
 
 CLEAR_LINE_CHAR = "\033[2K"
 
-def compute_mutation_coverage(results: shelve.Shelf, root: Path) -> None:
+def compute_rustsmith_mut_coverage(results: shelve.Shelf, root: Path) -> None:
     for i, file in enumerate(root.rglob("*.rs")):
         # dont redo what we've already calculated
         if (i+1) < 32:
@@ -21,8 +21,16 @@ def compute_mutation_coverage(results: shelve.Shelf, root: Path) -> None:
 
         print(f"{CLEAR_LINE_CHAR}Computing coverage for file #{i+1}: {file}", end="\r")
         env = TestContext(MUTATED_RUSTC_PATH, file, get_default_args_path(file), 
-                          False, False, False, 
-                          DEFAULT_REDUCE_ROOT, TEMPLATE_SCRIPT_PATH, False)
+                          DEFAULT_REDUCE_ROOT, TEMPLATE_SCRIPT_PATH, False,
+                          False, False, False)
+        results[file.as_posix()] = check_all(env, 1, MAX_MUTANT, jobs=12)
+
+def compute_rustc_mut_coverage(results: shelve.Shelf, root: Path) -> None:
+    for i, file in enumerate(root.rglob("*.rs")):
+        print(f"{CLEAR_LINE_CHAR}Computing coverage for file #{i+1}: {file}", end="\r")
+        env = TestContext(MUTATED_RUSTC_PATH, file, None, 
+                          DEFAULT_REDUCE_ROOT, TEMPLATE_SCRIPT_PATH, False,
+                          False, False, False)
         results[file.as_posix()] = check_all(env, 1, MAX_MUTANT, jobs=12)
 
 def main() -> None: 
@@ -31,8 +39,13 @@ def main() -> None:
     - Compute their mutation coverage
     - Stores them in file
     """
-    with shelve.open("mutation_test/mutation_cov_results/store") as results:
-        compute_mutation_coverage(results, Path("mutation_test/tests"))
+    # RustSmith evaluations
+    # with shelve.open("mutation_test/rustsmith_cov_results/store") as results:
+    #     compute_mutation_coverage(results, Path("mutation_test/tests"))
+
+    # Rustc evaluations
+    with shelve.open("mutation_test/rustc_cov_results/store") as results:
+        compute_rustsmith_mut_coverage(results, Path("/home/jacob/projects/rustsmith/rust-mutcov/src/test/mir-opt"))
 
 if __name__ == "__main__":
     main()

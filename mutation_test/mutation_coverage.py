@@ -41,10 +41,12 @@ def parse_args() -> argparse.Namespace:
                         help="Try all mutatnts in range [mutation, max_mutantion]?")
     mutation_config.add_argument("-mm", "--max-mutation", type=int, default=MAX_MUTANT,
                                  help="Which mutant number to try up to?")
-    mutation_config.add_argument("--panic-kills-interesting", action="store_true", default=False,
+    mutation_config.add_argument("--panic-kill-interesting", action="store_true", default=False,
                                  help="Are panic kills interesting to the reducer?")
-    mutation_config.add_argument("--binary-error-uninteresting", action="store_true", default=False,
-                                 help="Are compiler binary erroring uninteresting to the reducer?")
+    mutation_config.add_argument("--bin-diff-interesting", action="store_true", default=False,
+                                 help="Is the binary being different (but same output when ran) interesting to the reducer?")
+    mutation_config.add_argument("--output-error-interesting", action="store_true", default=False,
+                                 help="Are output binary errors/timeouts interesting to the reducer?")
 
     parser.add_argument("--reduce-root", type=Path, required=False,
                         default=DEFAULT_REDUCE_ROOT,
@@ -100,31 +102,41 @@ class TestContext:
     compiler: str
     input_path: Path
     input_args_path: Path
-    panic_kill_is_interesting: bool     # TODO: do something with these values here
-    bin_err_is_interesting: bool        # TODO: do something with these values here
-    bin_timeout_is_interesting: bool    # TODO: do something with these values here
     reduce_root: Path
     template_script_path: Path
     keep_folder: bool
+    panic_kill_is_interesting: bool      # TODO: do something with these values here
+    bin_diff_is_interesting: bool        # TODO: do something with these values here
+    output_error_is_interesting: bool    # TODO: do something with these values here
 
 def _get_context(args: argparse.Namespace) -> TestContext:
     return TestContext(args.compiler, args.input_path, args.input_args_path,
-                       args.panic_kills_interesting, 
-                       not args.binary_error_uninteresting, not args.binary_error_uninteresting, 
-                       args.reduce_root, args.template_script, args.keep)
+                       args.reduce_root, args.template_script, args.keep,
+                       args.panic_kill_interesting, args.bin_diff_interesting, args.output_error_interesting)
 
 def check_single(env: TestContext, mutant: int) -> Detection:
     # create a test case using the test script, compiler, and mutation settings.
     test_case = TestCase(
-        CompilerConfig("", "0", 0, env.compiler), 
-        CompilerConfig("", "0", mutant, env.compiler), 
+        CompilerConfig("", "-Zmir-opt-level=4 -Copt-level=1", 0,      env.compiler), 
+        CompilerConfig("", "-Zmir-opt-level=4 -Copt-level=1", mutant, env.compiler), 
         env.input_path, 
         env.input_args_path,
     )
+
+    return_values = get_kill_return_values()
+    if env.panic_kill_is_interesting:
+        return_values["compile_panic_return"] = 0
+        return_values["compile_timeout_return"] = 0
+    if env.bin_diff_is_interesting:
+        return_values["binary_difference_return"] = 0
+    if env.output_error_is_interesting:
+        return_values["output_timeout_return"] = 0
+        return_values["output_err_return"] = 0
+    # default: output_diff_return is interesting
     
     return difference_detected(
         test_case, 
-        ReductionEnv(get_kill_return_values(), env.reduce_root, env.template_script_path), 
+        ReductionEnv(return_values, env.reduce_root, env.template_script_path), 
         keep=env.keep_folder
     )
 
