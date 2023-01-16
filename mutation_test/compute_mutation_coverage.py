@@ -27,7 +27,7 @@ def compute_rustsmith_mut_coverage(results: shelve.Shelf, root: Path) -> None:
 
 def compute_rustc_mut_coverage(results: shelve.Shelf, root: Path) -> None:
     for i, file in enumerate(root.rglob("*.rs")):
-        if i < 33: 
+        if (i+1) < 100: 
             continue
 
         print(f"{CLEAR_LINE_CHAR}Computing coverage for file #{i+1}: {file}", end="\r")
