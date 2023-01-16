@@ -7,7 +7,16 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from collections import Counter
 
-from mutation_test.mutation_coverage import Detection
+# from mutation_test.mutation_coverage import Detection
+from enum import Enum, auto
+class Detection(Enum):
+    UNKNOWN = 0
+    DETECTED = auto()
+    UNDETECTED = auto() # bug not present
+    PANIC = auto()
+    COMPILE_TIMEOUT = auto()
+    BINARY_ERRORS = auto()
+    BINARY_TIMEOUT = auto()
 
 def read_results(store_path: Path) -> Dict:
     coverage = {}
