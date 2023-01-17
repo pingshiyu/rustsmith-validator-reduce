@@ -2,7 +2,8 @@ from enum import Enum, auto
 from typing import Dict
 from pathlib import Path
 
-MUTATED_RUSTC_PATH = "/home/jacob/projects/rustsmith/rust-mutcov/rust-build/bin/rustc"
+RUST_BUILD_ROOT = Path("/home/jacob/Projects/rustsmith/rust-mutcov")
+MUTATED_RUSTC_PATH = (RUST_BUILD_ROOT / "build/x86_64-unknown-linux-gnu/stage2/bin/rustc").as_posix()
 TEMPLATE_SCRIPT_PATH = Path("reducer/shell-script-templates/mutation_detection.sh")
 DEFAULT_REDUCE_ROOT = Path("reducer/reduce/mutations/")
 MAX_MUTANT = 380
