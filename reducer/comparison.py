@@ -1,10 +1,10 @@
-import string
-import random
 from dataclasses import dataclass
 from typing import Optional, Dict
 from pathlib import Path
 import shutil
 import pprint as pp
+
+from utils import random_str
 
 COMPILE_TIMEOUT = 20.00
 OUTPUT_TIMEOUT = 1.00
@@ -33,13 +33,6 @@ class ReductionEnv:
     reduction_root: Path = Path("reducer/reduce")
     # template to generate interesting.sh script
     creduce_script_template_path: Path = Path("reducer/shell-script-templates/mutation_detection.sh")
-    
-
-def _random_str(size : int = 16, chars : str = string.ascii_letters+string.digits) -> str:
-    """
-    Gets one of the (26 * 2 + 10)^16 ~ O(10^28) possible strings
-    """
-    return ''.join(random.choice(chars) for _ in range(size))
 
 def _create_reduce_folder(test_case: TestCase, folder_root: Path, retries : int = 3, verbose: bool = False) -> Path:
     """
@@ -48,7 +41,7 @@ def _create_reduce_folder(test_case: TestCase, folder_root: Path, retries : int 
     # test_case_name = [filename].rs
     test_case_name = test_case.path.name
     # folder_name = [filename]_hash_str
-    folder_name = f"{test_case_name.rsplit('.', maxsplit=1)[0]}_{_random_str()}"
+    folder_name = f"{test_case_name.rsplit('.', maxsplit=1)[0]}_{random_str()}"
 
     # make root folder
     reduce_folder = folder_root / folder_name
