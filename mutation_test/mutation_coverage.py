@@ -121,8 +121,8 @@ def _get_context(args: argparse.Namespace) -> TestContext:
 def check_single(env: TestContext, mutant: int) -> Detection:
     # create a test case using the test script, compiler, and mutation settings.
     test_case = TestCase(
-        CompilerConfig("", "-Zmir-opt-level=4 -Copt-level=1", 0,      env.compiler), 
-        CompilerConfig("", "-Zmir-opt-level=4 -Copt-level=1", mutant, env.compiler), 
+        CompilerConfig("", "-Zmir-opt-level=4", 0,      env.compiler), 
+        CompilerConfig("", "-Zmir-opt-level=4", mutant, env.compiler), 
         env.input_path, 
         env.input_args_path,
     )

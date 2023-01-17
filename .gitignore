@@ -8,6 +8,7 @@ mutation_test/**/*
 !mutation_test/**/*.ipynb
 !mutation_test/rustc_cov
 !mutation_test/analysis
+!mutation_test/killing_ground
 
 reducer/reduce/mutations/file0_*/**/*
 
