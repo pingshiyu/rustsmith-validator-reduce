@@ -5,6 +5,9 @@ RUSTSMITH_ROOT = Path("/home/jacob/Projects/rustsmith")
 RUSTSMITH_PATH = RUSTSMITH_ROOT / "rustsmith/bin/rustsmith"
 DEFAULT_OUT_DIR = RUSTSMITH_ROOT / "rustsmith-validator-reduce/mutation_test/killing_ground/out"
 
+_RUSTSMITH_FOLDER_NAME = "_rustsmith"
+RUSTSMITH_OUT_DIR = DEFAULT_OUT_DIR / _RUSTSMITH_FOLDER_NAME
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="python -m mutation_test.round_robin.rustsmith",
@@ -38,9 +41,11 @@ def parse_args() -> argparse.Namespace:
 
     return args
 
-def _prepare_killing_ground(ground_root: Path):
+def _prepare_killing_ground(mutants: list[int], ground_root: Path):
     ground_root.mkdir(parents=True, exist_ok=True)
-    pass
+    (ground_root / _RUSTSMITH_FOLDER_NAME).mkdir(exist_ok=True)
+    for mutant in mutants:
+        (ground_root / str(mutant)).mkdir(exist_ok=True)
 
 def attempt_murder(mutant: int, timeout: float):
     """
@@ -54,9 +59,10 @@ def main():
     print(args)
 
     # prepare directories structure
-    _prepare_killing_ground()
+    _prepare_killing_ground(args.mutants, args.out_dir)
 
     # try to kill each mutant
+    
 
 if __name__ == '__main__':
     main()
