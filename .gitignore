@@ -7,6 +7,7 @@ mutation_test/**/*
 !mutation_test/**/*.txt
 !mutation_test/**/*.ipynb
 !mutation_test/rustc_cov
+!mutation_test/analysis
 
 reducer/reduce/mutations/file0_*/**/*
 
