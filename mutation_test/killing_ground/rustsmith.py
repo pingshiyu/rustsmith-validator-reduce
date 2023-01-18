@@ -212,6 +212,7 @@ def attempt_murder(mutant: int, ground: KillingGroundSettings) -> None:
                 )
 
             # attempt kill using generated test cases
+            print(f"Attempting to kill m{mutant}...")
             kill_results = try_killing_with(rustsmith_cases_folder, mutant, ground)
             print(f"Test results of m{mutant}: {kill_results}")
 
