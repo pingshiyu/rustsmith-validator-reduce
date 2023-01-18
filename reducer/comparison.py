@@ -5,9 +5,7 @@ import shutil
 import pprint as pp
 
 from utils import random_str
-
-COMPILE_TIMEOUT = 20.00
-OUTPUT_TIMEOUT = 1.00
+from mutation_test.settings import COMPILE_TIMEOUT, OUTPUT_TIMEOUT
 
 @dataclass
 class CompilerConfig:

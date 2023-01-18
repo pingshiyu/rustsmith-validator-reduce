@@ -8,6 +8,9 @@ TEMPLATE_SCRIPT_PATH = Path("reducer/shell-script-templates/mutation_detection.s
 DEFAULT_REDUCE_ROOT = Path("reducer/reduce/mutations/")
 MAX_MUTANT = 380
 
+COMPILE_TIMEOUT = 30.00
+OUTPUT_TIMEOUT = 1.00
+
 class Detection(Enum):
     UNKNOWN = auto()
     UNDETECTED = auto() # bug not present
