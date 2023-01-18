@@ -3,7 +3,6 @@ from pathlib import Path
 from dataclasses import dataclass
 from enum import Enum, auto
 import subprocess
-from multiprocessing import Pool
 import shutil
 
 from utils import timeout, random_str
@@ -176,7 +175,7 @@ def try_killing_with(
     results = check_all(envs)
 
     unwanted_results = set([Detection.UNDETECTED, Detection.COMPILE_TIMEOUT_STOPPED_EARLY])
-    return {context: detection for context, detection in results.items()
+    return {context.input_path: detection for context, detection in results.items()
             if detection not in unwanted_results}
 
 
@@ -221,13 +220,14 @@ def attempt_murder(mutant: int, ground: KillingGroundSettings) -> None:
                 if detection in coverage:
                     continue
                 print(f"Found new coverage for {mutant}: {detection.name}")
-                # we have a killer with new coverage of the mutant: move to mutant's killers folder
-                saved_rustsmith_file = rustsmith_file.rename(
+                # we have a killer with new coverage of the mutant: move the folder to mutant's killers folder
+                rustsmith_file_dir = rustsmith_file.parent
+                saved_rustsmith_dir = rustsmith_file_dir.rename(
                     ground.out_dir / str(mutant) / f"{detection.name}_{random_str()}"
                 )
 
                 # update killings record
-                coverage[detection] = saved_rustsmith_file
+                coverage[detection] = saved_rustsmith_dir
 
             # clean up generated test cases
             for file in rustsmith_cases_folder.glob("*"):
