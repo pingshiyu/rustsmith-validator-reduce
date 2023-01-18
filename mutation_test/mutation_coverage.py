@@ -115,17 +115,17 @@ class MutationContext:
     bin_diff_is_interesting: bool
     output_error_is_interesting: bool
 
-def _get_contexts(args: argparse.Namespace) -> list[MutationContext] | MutationContext:
+def _get_contexts(args: argparse.Namespace) -> set[MutationContext] | MutationContext:
     """
     Returns a list of contexts iff `args.try_all == True`.
     """
     if args.try_all:
-        contexts = []
+        contexts = set()
         for m in range(args.mutation, args.max_mutation):
             context = MutationContext(args.compiler, m, args.input_path, args.input_args_path,
                                   args.reduce_root, args.template_script, args.keep,
                                   args.panic_kill_interesting, args.bin_diff_interesting, args.output_error_interesting)
-            contexts.append(context)
+            contexts.add(context)
         return contexts
     else:
         return MutationContext(args.compiler, args.mutation, args.input_path, args.input_args_path,
@@ -176,8 +176,7 @@ def check_all(
         n_timeouts = 0
         n_evaluated = 0
 
-        # get the results
-        
+        # get the results       
         for context, result in zip(contexts, async_results):
             n_evaluated += 1
             detected = result.get()

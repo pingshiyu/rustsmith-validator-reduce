@@ -9,7 +9,7 @@ from utils import timeout, random_str
 from mutation_test.mutation_coverage import MutationContext, check_all
 from mutation_test.settings import Detection, MUTATED_RUSTC_PATH, TEMPLATE_SCRIPT_PATH
 
-RUSTSMITH_ROOT = Path("/home/jacob/Projects/rustsmith")
+RUSTSMITH_ROOT = Path("/home/jacob/projects/rustsmith")
 RUSTSMITH_PATH = RUSTSMITH_ROOT / "rustsmith/bin/rustsmith"
 DEFAULT_OUT_DIR = (
     RUSTSMITH_ROOT / "rustsmith-validator-reduce/mutation_test/killing_ground/out"
@@ -152,19 +152,19 @@ def _prepare_killing_ground(mutants: list[int], ground_root: Path):
 
 
 def try_killing_with(
-    cases_root: Path, mutant: int, ground: KillingGroundSettings
+    cases_root: Path, mutant: int, reduction_folder: Path
 ) -> dict[Path, Detection]:
     """
     Try kill mutants using the generated cases in `cases_root`
     Returns a mapping of how each file did to kill the mutant.
     """
-    envs = []
+    envs: set[MutationContext] = set()
     for case in cases_root.rglob("*.rs"):
-        envs.append(
+        envs.add(
             MutationContext(
                 MUTATED_RUSTC_PATH, mutant, 
                 case, case.with_suffix(".txt"),
-                reduce_root=ground.out_dir / _REDUCTION_FOLDER_NAME, 
+                reduce_root=reduction_folder, 
                 template_script_path=TEMPLATE_SCRIPT_PATH,
                 keep_folder=False, 
                 panic_kill_is_interesting=False,
@@ -213,7 +213,7 @@ def attempt_murder(mutant: int, ground: KillingGroundSettings) -> None:
 
             # attempt kill using generated test cases
             print(f"Attempting to kill m{mutant}...")
-            kill_results = try_killing_with(rustsmith_cases_folder, mutant, ground)
+            kill_results = try_killing_with(rustsmith_cases_folder, mutant, ground.out_dir / _REDUCTION_FOLDER_NAME)
             print(f"Test results of m{mutant}: {kill_results}")
 
             # update overall killing record, keep test cases if new coverage found
