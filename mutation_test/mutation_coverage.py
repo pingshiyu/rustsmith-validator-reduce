@@ -11,6 +11,7 @@ import shutil
 from multiprocessing import Pool
 from dataclasses import dataclass
 from typing import Optional
+from warnings import warn
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -101,9 +102,10 @@ def difference_detected(
         if not keep:
             shutil.rmtree(reduction_folder)
 
-@dataclass
-class TestContext:
+@dataclass(frozen=True, eq=True)
+class MutationContext:
     compiler: str
+    mutant: int
     input_path: Path
     input_args_path: Optional[Path]
     reduce_root: Path
@@ -111,18 +113,30 @@ class TestContext:
     keep_folder: bool
     panic_kill_is_interesting: bool
     bin_diff_is_interesting: bool
-    output_error_is_interesting: bool 
+    output_error_is_interesting: bool
 
-def _get_context(args: argparse.Namespace) -> TestContext:
-    return TestContext(args.compiler, args.input_path, args.input_args_path,
-                       args.reduce_root, args.template_script, args.keep,
-                       args.panic_kill_interesting, args.bin_diff_interesting, args.output_error_interesting)
+def _get_contexts(args: argparse.Namespace) -> list[MutationContext] | MutationContext:
+    """
+    Returns a list of contexts iff `args.try_all == True`.
+    """
+    if args.try_all:
+        contexts = []
+        for m in range(args.mutation, args.max_mutation):
+            context = MutationContext(args.compiler, m, args.input_path, args.input_args_path,
+                                  args.reduce_root, args.template_script, args.keep,
+                                  args.panic_kill_interesting, args.bin_diff_interesting, args.output_error_interesting)
+            contexts.append(context)
+        return contexts
+    else:
+        return MutationContext(args.compiler, args.mutation, args.input_path, args.input_args_path,
+                           args.reduce_root, args.template_script, args.keep,
+                           args.panic_kill_interesting, args.bin_diff_interesting, args.output_error_interesting)
 
-def check_single(env: TestContext, mutant: int) -> Detection:
+def check_single(env: MutationContext) -> Detection:
     # create a test case using the test script, compiler, and mutation settings.
     test_case = TestCase(
-        CompilerConfig("", "-Zmir-opt-level=4", 0,      env.compiler), 
-        CompilerConfig("", "-Zmir-opt-level=4", mutant, env.compiler), 
+        CompilerConfig("", "-Zmir-opt-level=4",          0, env.compiler), 
+        CompilerConfig("", "-Zmir-opt-level=4", env.mutant, env.compiler), 
         env.input_path, 
         env.input_args_path,
     )
@@ -145,50 +159,56 @@ def check_single(env: TestContext, mutant: int) -> Detection:
     )
 
 def check_all(
-    env: TestContext, 
-    min_mutant: int, max_mutant: int, 
-    jobs: int = 8, 
+    contexts: set[MutationContext], 
+    jobs: int = 8,
     timeout_early_stop_pct: float = 0.50,
-    timeout_check_from: int = 10) -> list[tuple[int, Detection]]:
+    timeout_check_from: int = 10) -> dict[MutationContext, Detection]:
     """
-    Check if any of [min_mutant, max_mutant] mutants results in different code on the
-    test case `env`
+    Evaluate each context in `contexts` for how strongly the mutant is killed.
+    Returns the result of the test. Optionally stop early if the majority of the tests
+    were found to be of type `Detection.COMPILE_TIMEOUT`
     """
-    mutants_detected = []
+    test_results = {}
     with Pool(processes=jobs) as p:
-        mutants = list(range(min_mutant, max_mutant+1))
-        async_results = [p.apply_async(check_single, (env, m)) for m in mutants]
+        async_results = [p.apply_async(check_single, [context]) for context in contexts]
 
         # keep running tally of % of failed cases. stop early if we have too many timeouts
-        timeouts = 0
+        n_timeouts = 0
+        n_evaluated = 0
 
         # get the results
-        for m, result in zip(mutants, async_results):
+        
+        for context, result in zip(contexts, async_results):
+            n_evaluated += 1
             detected = result.get()
+            test_results[context] = detected
+
+            if detected == Detection.UNKNOWN:
+                warn(f"Unknown result from: {context}")
 
             if (detected == Detection.COMPILE_TIMEOUT):
-                timeouts += 1
+                n_timeouts += 1
                 
                 # calculate % of failed here. stop early if greater % than threshold
-                if ((m+1) > timeout_check_from) and ((timeouts / (m+1)) > timeout_early_stop_pct):
-                    mutants_detected.append((-1, Detection.UNKNOWN)) # indicate early stop
+                if (n_evaluated > timeout_check_from) and ((n_timeouts / n_evaluated) > timeout_early_stop_pct):
+                    test_results[context] = Detection.COMPILE_TIMEOUT_STOPPED_EARLY # indicate early stop
+                    warn(f"Stopping early on: {context}")
                     break
-
-            if (detected != Detection.UNDETECTED) and (detected != Detection.UNKNOWN):
-                mutants_detected.append((m, detected))
-
-    return mutants_detected
+    return test_results
 
 def main() -> None:
     args = parse_args()
     # print(args)
 
-    env = _get_context(args)
+    envs = _get_contexts(args)
 
     if args.try_all:
-        print(f"mutants detected by {env.input_path}:", check_all(env, args.mutation, args.max_mutation))
+        results = check_all(envs)
+        mutation_results = [(mut_test.mutant, detection) for mut_test, detection in results.items()
+                            if (detection != Detection.UNDETECTED) and (detection != Detection.UNKNOWN)]
+        print(f"mutants detected by {args.input_path}:", mutation_results)
     else:
-        print(f"mutant {args.mutation} detected by {env.input_path}:", check_single(env, args.mutation))
+        print(f"mutant {args.mutation} detected by {args.input_path}:", check_single(envs))
 
 if __name__ == '__main__':
     main()

@@ -13,6 +13,7 @@ class Detection(Enum):
     UNDETECTED = auto() # bug not present
     COMPILE_PANIC = auto()
     COMPILE_TIMEOUT = auto()
+    COMPILE_TIMEOUT_STOPPED_EARLY = auto() # too many timeouts, stopping early
     BINARY_DIFFERENCE = auto()
     OUTPUT_ERRORS = auto()
     OUTPUT_TIMEOUT = auto()

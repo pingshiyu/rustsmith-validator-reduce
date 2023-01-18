@@ -4,7 +4,7 @@ caches the result in a shelve file.
 """
 from mutation_test.mutation_coverage import (
     check_all, get_default_args_path,
-    TestContext, 
+    MutationContext, 
 )
 from mutation_test.settings import (
     MUTATED_RUSTC_PATH, DEFAULT_REDUCE_ROOT, TEMPLATE_SCRIPT_PATH, MAX_MUTANT, RUST_BUILD_ROOT
@@ -22,7 +22,7 @@ def compute_rustsmith_mut_coverage(results: shelve.Shelf, root: Path) -> None:
             continue
 
         print(f"{CLEAR_LINE_CHAR}Computing coverage for file #{i+1}: {file}", end="\r")
-        env = TestContext(MUTATED_RUSTC_PATH, file, get_default_args_path(file), 
+        env = MutationContext(MUTATED_RUSTC_PATH, file, get_default_args_path(file), 
                           DEFAULT_REDUCE_ROOT, TEMPLATE_SCRIPT_PATH, False,
                           False, False, False)
         results[file.as_posix()] = check_all(env, 1, MAX_MUTANT, jobs=12)
@@ -33,7 +33,7 @@ def compute_rustc_mut_coverage(results: shelve.Shelf, root: Path) -> None:
             continue
 
         print(f"{CLEAR_LINE_CHAR}Computing coverage for file #{i+1}: {file}", end="\r")
-        env = TestContext(MUTATED_RUSTC_PATH, file, None, 
+        env = MutationContext(MUTATED_RUSTC_PATH, file, None, 
                           DEFAULT_REDUCE_ROOT, TEMPLATE_SCRIPT_PATH, False,
                           False, False, False)
         results[file.as_posix()] = check_all(env, 1, MAX_MUTANT, jobs=8)

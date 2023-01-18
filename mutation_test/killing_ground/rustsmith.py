@@ -4,11 +4,11 @@ from dataclasses import dataclass
 from enum import Enum, auto
 import subprocess
 from multiprocessing import Pool
-import glob
+import shutil
 
 from utils import timeout, random_str
-from mutation_test.mutation_coverage import TestContext, check_single
-from mutation_test.settings import Detection
+from mutation_test.mutation_coverage import MutationContext, check_all
+from mutation_test.settings import Detection, MUTATED_RUSTC_PATH, TEMPLATE_SCRIPT_PATH
 
 RUSTSMITH_ROOT = Path("/home/jacob/Projects/rustsmith")
 RUSTSMITH_PATH = RUSTSMITH_ROOT / "rustsmith/bin/rustsmith"
@@ -17,12 +17,13 @@ DEFAULT_OUT_DIR = (
 )
 
 _RUSTSMITH_FOLDER_NAME = "_rustsmith"
+_REDUCTION_FOLDER_NAME = "_reduce"
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="python -m mutation_test.round_robin.rustsmith",
-        description="Using RustSmith to massacre mutants.",
+        description="Use RustSmith to massacre mutants.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
 
@@ -158,7 +159,25 @@ def try_killing_with(
     Try kill mutants using the generated cases in `cases_root`
     Returns a mapping of how each file did to kill the mutant.
     """
-    pass
+    envs = []
+    for case in cases_root.rglob("*.rs"):
+        envs.append(
+            MutationContext(
+                MUTATED_RUSTC_PATH, mutant, 
+                case, case.with_suffix(".txt"),
+                reduce_root=ground.out_dir / _REDUCTION_FOLDER_NAME, 
+                template_script_path=TEMPLATE_SCRIPT_PATH,
+                keep_folder=False, 
+                panic_kill_is_interesting=False,
+                bin_diff_is_interesting=False,
+                output_error_is_interesting=False
+            )
+        )
+    results = check_all(envs)
+
+    unwanted_results = set([Detection.UNDETECTED, Detection.COMPILE_TIMEOUT_STOPPED_EARLY])
+    return {context: detection for context, detection in results.items()
+            if detection not in unwanted_results}
 
 
 def attempt_murder(mutant: int, ground: KillingGroundSettings) -> None:
@@ -170,34 +189,38 @@ def attempt_murder(mutant: int, ground: KillingGroundSettings) -> None:
     with timeout(ground.minutes_per_mutant * 60) as timer:
         while True:
             if timer.timed_out:
+                print(f"Out of time for {mutant}. Maybe another day...\n")
                 return
+            print(f"Attempting to kill mutant {mutant}, {timer.remaining}s left.")
 
             # generate test cases
             rustsmith_cases_folder = ground.out_dir / _RUSTSMITH_FOLDER_NAME
             rustsmith_generate_cmd = [
-                RUSTSMITH_PATH,
+                str(RUSTSMITH_PATH),
                 "-t",
-                ground.threads,
+                str(ground.threads),
                 "-n",
-                ground.rustsmiths_per_cycle,
+                str(ground.rustsmiths_per_cycle),
                 "--directory",
-                rustsmith_cases_folder,
+                str(rustsmith_cases_folder),
             ]
+            print("Generating Rust files:", " ".join(rustsmith_generate_cmd))
             try:
                 subprocess.run(rustsmith_generate_cmd, timeout=timer.remaining)
             except subprocess.TimeoutExpired as e:
                 print(
-                    f"Time quota ran out: stopping generation early after {e.timeout}s."
+                    f"Time quota ran out: stopping generation early after trying for {e.timeout}s."
                 )
 
             # attempt kill using generated test cases
             kill_results = try_killing_with(rustsmith_cases_folder, mutant, ground)
+            print(f"Test results of m{mutant}: {kill_results}")
 
             # update overall killing record, keep test cases if new coverage found
             for rustsmith_file, detection in kill_results.items():
                 if detection in coverage:
                     continue
-
+                print(f"Found new coverage for {mutant}: {detection.name}")
                 # we have a killer with new coverage of the mutant: move to mutant's killers folder
                 saved_rustsmith_file = rustsmith_file.rename(
                     ground.out_dir / str(mutant) / f"{detection.name}_{random_str()}"
@@ -207,12 +230,15 @@ def attempt_murder(mutant: int, ground: KillingGroundSettings) -> None:
                 coverage[detection] = saved_rustsmith_file
 
             # clean up generated test cases
-            for file in rustsmith_cases_folder.rglob("*"):
-                file.unlink()
+            for file in rustsmith_cases_folder.glob("*"):
+                shutil.rmtree(file)
 
             # see if coverage now sufficient
             if sufficient_for_level(ground.level, set(coverage.keys())):
+                print(f"Mutant {mutant} sufficiently killed! Moving on...\n")
                 return
+
+            print(f"Mutant {mutant} stubbornly survived. Trying new batch of test cases.")
 
 
 def main():
