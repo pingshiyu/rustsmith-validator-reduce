@@ -152,7 +152,7 @@ def _prepare_killing_ground(mutants: list[int], ground_root: Path):
 
 
 def try_killing_with(
-    cases_root: Path, mutant: int, reduction_folder: Path
+    cases_root: Path, mutant: int, reduction_folder: Path, jobs: int = 8
 ) -> dict[Path, Detection]:
     """
     Try kill mutants using the generated cases in `cases_root`
@@ -172,7 +172,7 @@ def try_killing_with(
                 output_error_is_interesting=False
             )
         )
-    results = check_all(envs)
+    results = check_all(envs, jobs=jobs)
 
     unwanted_results = set([Detection.UNDETECTED, Detection.COMPILE_TIMEOUT_STOPPED_EARLY])
     return {context.input_path: detection for context, detection in results.items()

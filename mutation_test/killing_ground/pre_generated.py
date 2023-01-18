@@ -28,6 +28,8 @@ def parse_args() -> argparse.Namespace:
     )
     killing_settings.add_argument("-t", "--tests-root", type=Path, required=True,
                                   help="Path to folder containing your killer test cases.")
+    killing_settings.add_argument("--jobs", type=int, required=False,
+                                  help="Number of processes to use.")
 
     # do a bit more parsing once inputs are specified
     args = parser.parse_args()
@@ -40,7 +42,7 @@ def main():
     reduction_folder = DEFAULT_OUT_DIR / _REDUCTION_FOLDER_NAME
     (reduction_folder).mkdir(parents=True, exist_ok=True)
 
-    results = try_killing_with(args.tests_root, args.mutant, reduction_folder)
+    results = try_killing_with(args.tests_root, args.mutant, reduction_folder, jobs=args.jobs)
     print(results)
 
 if __name__ == '__main__':
