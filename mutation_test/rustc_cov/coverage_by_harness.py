@@ -65,7 +65,7 @@ def main():
 
     # run through all mutations
     with shelve.open("mutation_test/rustc_cov_results_harness/store") as results:
-        for m in range(0, MAX_MUTANT):
+        for m in range(0, MAX_MUTANT+1):
             mutation_env["RUSTC_MUTATION_NUMBER"] = f"{m}"
             test_command = ["./x.py", "test", "test/mir-opt", "--force-rerun"]
 
@@ -81,6 +81,7 @@ def main():
                 )
             except subprocess.TimeoutExpired as e:
                 # write timeout into summary
+                print(f"Mutant {m} evaluation timed out!\n")
                 results[f"{m}"] = _get_save_entry(_empty_summary(), "", "")
                 continue
 
