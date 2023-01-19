@@ -2,6 +2,8 @@ import string
 import random
 import time
 
+SECONDS_IN_MINUTE = 60
+
 def random_str(size : int = 16, chars : str = string.ascii_letters+string.digits) -> str:
     """
     Gets one of the (26 * 2 + 10)^16 ~ O(10^28) possible strings
