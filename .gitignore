@@ -2,6 +2,10 @@ dist
 .idea
 **/out_*
 
+# rustc generated files
+*.mir
+*.dot
+
 mutation_test/**/*
 !mutation_test/**/*.py
 !mutation_test/**/*.txt

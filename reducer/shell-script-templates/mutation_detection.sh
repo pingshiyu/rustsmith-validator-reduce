@@ -122,7 +122,7 @@ main() {{
         echo "Output different, mutant killed."
         exit $OUTPUT_DIFFERENCE_RETURN 
     else 
-        echo "Same output produced, mutant not killed."
+        echo "Same output produced but binaries different, mutant weakly killed."
         exit $BINARY_DIFFERENCE_RETURN
     fi
 }}

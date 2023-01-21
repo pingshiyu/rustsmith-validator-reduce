@@ -27,6 +27,14 @@ def read_results(store_path: Path) -> Dict:
         print("Errors:", errors)
     return coverage
 
+def peek_dict(mapping: dict, first: int = 3) -> dict:
+    # peek into a dict, to get an idea of what the data looks like
+    return {
+        key_value[0]: key_value[1] for 
+        i, key_value in enumerate(mapping.items())
+        if i < first
+    }
+
 def transpose_coverage_results(coverage: Dict) -> Dict:
     """
     Converts a coverage record of mapping:
