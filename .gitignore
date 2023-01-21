@@ -10,6 +10,7 @@ mutation_test/**/*
 !mutation_test/**/*.py
 !mutation_test/**/*.txt
 !mutation_test/**/*.ipynb
+!mutation_test/**/*.html
 !mutation_test/rustc_cov
 !mutation_test/analysis
 !mutation_test/killing_ground
