@@ -161,8 +161,8 @@ def check_single(env: MutationContext) -> Detection:
 def check_all(
     contexts: set[MutationContext], 
     jobs: int = 8,
-    timeout_early_stop_pct: float = 0.50,
-    timeout_check_from: int = 10) -> dict[MutationContext, Detection]:
+    timeout_early_stop_pct: float = 0.75,
+    timeout_check_from: int = 20) -> dict[MutationContext, Detection]:
     """
     Evaluate each context in `contexts` for how strongly the mutant is killed.
     Returns the result of the test. Optionally stop early if the majority of the tests
@@ -189,9 +189,10 @@ def check_all(
                 n_timeouts += 1
                 
                 # calculate % of failed here. stop early if greater % than threshold
-                if (n_evaluated > timeout_check_from) and ((n_timeouts / n_evaluated) > timeout_early_stop_pct):
+                timeout_rate = n_timeouts / n_evaluated
+                if (n_evaluated > timeout_check_from) and (timeout_rate > timeout_early_stop_pct):
                     test_results[context] = Detection.COMPILE_TIMEOUT_STOPPED_EARLY # indicate early stop
-                    warn(f"Stopping early on: {context}")
+                    warn(f"Stopping early on {n_evaluated} due to timeout rate of {timeout_rate*100}%: {context}")
                     break
     return test_results
 
