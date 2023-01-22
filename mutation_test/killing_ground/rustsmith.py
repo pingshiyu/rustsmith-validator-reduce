@@ -185,7 +185,7 @@ def attempt_murder(mutant: int, ground: KillingGroundSettings) -> None:
     with timeout(ground.minutes_per_mutant * 60) as timer:
         while True:
             if timer.timed_out:
-                print(f"Out of time for {mutant}. Maybe another day...\n")
+                print(f"Out of time for {mutant}. Killed in these ways: {set(coverage.keys())}. Maybe another day...\n")
                 return
             print(f"Attempting to kill mutant {mutant}, {timer.remaining}s left.")
 
@@ -232,7 +232,8 @@ def attempt_murder(mutant: int, ground: KillingGroundSettings) -> None:
                 shutil.rmtree(file)
 
             # see if coverage now sufficient
-            if sufficient_for_level(ground.level, set(coverage.keys())):
+            detection_types = set(coverage.keys())
+            if sufficient_for_level(ground.level, detection_types):
                 print(f"Mutant {mutant} sufficiently killed! Moving on...\n")
                 return
 
