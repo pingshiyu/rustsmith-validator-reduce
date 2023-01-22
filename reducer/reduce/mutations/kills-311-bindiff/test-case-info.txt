@@ -1,0 +1,12 @@
+TestCase(v1_config=CompilerConfig(version='',
+                                  flags='-Zmir-opt-level=4',
+                                  mutation=0,
+                                  compiler_path='/home/jacob/projects/rustsmith/rust-mutcov/build/x86_64-unknown-linux-gnu/stage1/bin/rustc'),
+         v2_config=CompilerConfig(version='',
+                                  flags='-Zmir-opt-level=4',
+                                  mutation=311,
+                                  compiler_path='/home/jacob/projects/rustsmith/rust-mutcov/build/x86_64-unknown-linux-gnu/stage1/bin/rustc'),
+         path=PosixPath('mutation_test/tests/outRust/file0/file0.rs'),
+         cli_args_path=PosixPath('mutation_test/tests/outRust/file0/file0.txt'),
+         time_limit_compile=30.0,
+         time_limit_bin=1.0)
