@@ -123,12 +123,9 @@ def sufficient_for_level(level: KillingLevel, detection_types: set[Detection]) -
         return (
             sufficient_for_level(KillingLevel.RUN_DIFF, detection_types)
             or (Detection.OUTPUT_ERRORS in detection_types)
-            or (Detection.OUTPUT_TIMEOUT in detection_types)
         )
     elif level == KillingLevel.PANIC:
-        return (Detection.COMPILE_PANIC in detection_types) or (
-            Detection.COMPILE_TIMEOUT in detection_types
-        )
+        return (Detection.COMPILE_PANIC in detection_types)
     else:
         return False
 
