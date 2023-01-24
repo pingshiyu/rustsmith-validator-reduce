@@ -2,7 +2,7 @@
 cmd line interface to check if the {rust-script, compilers} test case demonstrates mutation-differential on mutation x.
 """
 from reducer.comparison import CompilerConfig, TestCase, ReductionEnv, prepare_reduce_folder
-from mutation_test.settings import MUTATED_RUSTC_PATH, MAX_MUTANT, DEFAULT_REDUCE_ROOT, TEMPLATE_SCRIPT_PATH, Detection, return_code_to_detection, get_kill_return_values
+from mutation_test.settings import MUTATED_RUSTC_PATH, MAX_MUTANT, DEFAULT_REDUCE_ROOT, TEMPLATE_SCRIPT_PATH, MIR_COMPILE_FLAGS, Detection, return_code_to_detection, get_kill_return_values
 
 from pathlib import Path
 import subprocess
@@ -135,8 +135,8 @@ def _get_contexts(args: argparse.Namespace) -> set[MutationContext] | MutationCo
 def check_single(env: MutationContext) -> Detection:
     # create a test case using the test script, compiler, and mutation settings.
     test_case = TestCase(
-        CompilerConfig("", "-Zmir-opt-level=4",          0, env.compiler), 
-        CompilerConfig("", "-Zmir-opt-level=4", env.mutant, env.compiler), 
+        CompilerConfig("", MIR_COMPILE_FLAGS,          0, env.compiler), 
+        CompilerConfig("", MIR_COMPILE_FLAGS, env.mutant, env.compiler), 
         env.input_path, 
         env.input_args_path,
     )

@@ -6,6 +6,7 @@ RUST_BUILD_ROOT = Path("/home/jacob/projects/rustsmith/rust-mutcov")
 MUTATED_RUSTC_PATH = (RUST_BUILD_ROOT / "build/x86_64-unknown-linux-gnu/stage1/bin/rustc").as_posix()
 TEMPLATE_SCRIPT_PATH = Path("reducer/shell-script-templates/mutation_detection.sh")
 DEFAULT_REDUCE_ROOT = Path("reducer/reduce/mutations/")
+MIR_COMPILE_FLAGS = "-Zmir-opt-level=4 -Copt-level=1"
 MAX_MUTANT = 380
 
 COMPILE_TIMEOUT = 30.00
