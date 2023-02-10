@@ -4,10 +4,12 @@ from dataclasses import dataclass
 from enum import Enum, auto
 import subprocess
 import shutil
+import json
+from collections import namedtuple
 
 from utils import timeout, random_str
 from mutation_test.mutation_coverage import MutationContext, check_all
-from mutation_test.settings import Detection, MUTATED_RUSTC_PATH, TEMPLATE_SCRIPT_PATH
+from mutation_test.settings import Detection, DETECTION_CODE, MUTATED_RUSTC_PATH, TEMPLATE_SCRIPT_PATH
 
 RUSTSMITH_ROOT = Path("/home/jacob/projects/rustsmith")
 RUSTSMITH_PATH = RUSTSMITH_ROOT / "rustsmith/bin/rustsmith"
@@ -33,7 +35,7 @@ def parse_args() -> argparse.Namespace:
         "--mutants",
         type=int,
         nargs="+",
-        required=True,
+        default=range(1, 381),
         help="Kill list of mutants. Separated by space. E.g. 5 7 93 95 96 100 101",
     )
     killing_settings.add_argument(
@@ -175,18 +177,24 @@ def try_killing_with(
     return {context.input_path: detection for context, detection in results.items()
             if detection not in unwanted_results}
 
+@dataclass
+class KillerRecord:
+    path: Path
+    elapsed: float
 
-def attempt_murder(mutant: int, ground: KillingGroundSettings) -> None:
+CoverageDict = dict[Detection, KillerRecord]
+
+def attempt_murder(mutant: int, ground: KillingGroundSettings) -> CoverageDict:
     """
     Attempt to kill `mutant` within time limit `timeout`.
     """
-    coverage: dict[Detection, Path] = {}
+    coverage: CoverageDict = {}
 
     with timeout(ground.minutes_per_mutant * 60) as timer:
         while True:
             if timer.timed_out:
                 print(f"Out of time for {mutant}. Killed in these ways: {set(coverage.keys())}. Maybe another day...\n")
-                return
+                return coverage
             print(f"Attempting to kill mutant {mutant}, {timer.remaining}s left.")
 
             # generate test cases
@@ -225,7 +233,7 @@ def attempt_murder(mutant: int, ground: KillingGroundSettings) -> None:
                 )
 
                 # update killings record
-                coverage[detection] = saved_rustsmith_dir
+                coverage[detection] = KillerRecord(saved_rustsmith_dir, timer.elapsed)
 
             # clean up generated test cases
             for file in rustsmith_cases_folder.glob("*"):
@@ -235,9 +243,18 @@ def attempt_murder(mutant: int, ground: KillingGroundSettings) -> None:
             detection_types = set(coverage.keys())
             if sufficient_for_level(ground.level, detection_types):
                 print(f"Mutant {mutant} sufficiently killed! Moving on...\n")
-                return
+                return coverage
 
             print(f"Mutant {mutant} stubbornly survived. Trying new batch of test cases.")
+
+
+def _jsonify_coverage_dict(coverage: CoverageDict) -> str:
+    return json.dumps(
+        {
+            DETECTION_CODE[detection]: (str(record.path), record.elapsed)
+            for detection, record in coverage.items()
+        }
+    )
 
 
 def main():
@@ -260,8 +277,12 @@ def main():
 
     # try to kill each mutant
     for mutant in args.mutants:
-        attempt_murder(mutant, kill_setting)
+        coverage = attempt_murder(mutant, kill_setting)
 
+        # save record to file
+        coverage_file = (kill_setting.out_dir / str(mutant) / "info.json")
+        coverage_file.write_text(_jsonify_coverage_dict(coverage))
+        
 
 if __name__ == "__main__":
     main()

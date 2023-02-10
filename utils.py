@@ -19,7 +19,8 @@ class timeout(object):
         self.seconds = seconds
 
     def __enter__(self):
-        self.death_time = time.time() + self.seconds
+        self.start_time = time.time()
+        self.death_time = self.start_time + self.seconds
         return self
 
     def __exit__(self, type, value, traceback):
@@ -32,3 +33,7 @@ class timeout(object):
     @property
     def remaining(self):
         return self.death_time - time.time()
+
+    @property
+    def elapsed(self):
+        return time.time() - self.start_time
