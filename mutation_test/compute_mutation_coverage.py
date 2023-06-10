@@ -7,7 +7,7 @@ from mutation_test.mutation_coverage import (
     MutationContext, 
 )
 from mutation_test.settings import (
-    MUTATED_RUSTC_PATH, DEFAULT_REDUCE_ROOT, TEMPLATE_SCRIPT_PATH, MAX_MUTANT, RUST_BUILD_ROOT
+    MUTATED_RUSTC_PATH, DEFAULT_REDUCE_ROOT, TEMPLATE_SCRIPT_PATH, ALL_MUTANTS, RUST_BUILD_ROOT
 )
 
 from pathlib import Path
@@ -26,7 +26,7 @@ def compute_rustsmith_mut_coverage(results: shelve.Shelf, root: Path) -> None:
                                 file, get_default_args_path(file), 
                                 DEFAULT_REDUCE_ROOT, TEMPLATE_SCRIPT_PATH, False,
                                 False, False, False)
-                for mutant in range(1, MAX_MUTANT)]
+                for mutant in ALL_MUTANTS]
         results[file.as_posix()] = check_all(envs, jobs=8)
 
 def compute_rustc_mut_coverage(results: shelve.Shelf, root: Path) -> None:
@@ -39,7 +39,7 @@ def compute_rustc_mut_coverage(results: shelve.Shelf, root: Path) -> None:
                                 file, None, 
                                 DEFAULT_REDUCE_ROOT, TEMPLATE_SCRIPT_PATH, False,
                                 False, False, False)
-                for mutant in range(1, MAX_MUTANT)]
+                for mutant in ALL_MUTANTS]
         results[file.as_posix()] = check_all(envs, jobs=8)
 
 def main() -> None: 

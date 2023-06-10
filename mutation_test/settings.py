@@ -7,6 +7,9 @@ MUTATED_RUSTC_PATH = (RUST_BUILD_ROOT / "build/x86_64-unknown-linux-gnu/stage1/b
 TEMPLATE_SCRIPT_PATH = Path("reducer/shell-script-templates/mutation_detection.sh")
 DEFAULT_REDUCE_ROOT = Path("reducer/reduce/mutations/")
 MIR_COMPILE_FLAGS = "-Zmir-opt-level=4 -Copt-level=1"
+
+_REMOVED_MUTANTS = [6, 50, 53, 56, 57, 60, 61, 86, 88, 107, 110, 111, 112, 124, 182, 231, 241, 243, 245, 249, 299, 370, 366, 367, 368, 376]
+ALL_MUTANTS = sorted(list(set(range(1, 381)) - set(_REMOVED_MUTANTS)))
 MAX_MUTANT = 380
 
 COMPILE_TIMEOUT = 30.00

@@ -9,7 +9,7 @@ import shelve
 import re
 from typing import Any
 
-from mutation_test.settings import MAX_MUTANT
+from mutation_test.settings import ALL_MUTANTS
 from utils import SECONDS_IN_MINUTE
 
 RUSTC_BUILD_ROOT = Path("/home/jacob/projects/rustsmith/rust-mutcov")
@@ -65,7 +65,7 @@ def main():
 
     # run through all mutations
     with shelve.open("mutation_test/rustc_cov_results_harness/store") as results:
-        for m in range(0, MAX_MUTANT+1):
+        for m in ALL_MUTANTS:
             mutation_env["RUSTC_MUTATION_NUMBER"] = f"{m}"
             test_command = ["./x.py", "test", "test/mir-opt", "--force-rerun"]
 

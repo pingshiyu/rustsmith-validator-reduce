@@ -9,7 +9,7 @@ from collections import namedtuple
 
 from utils import timeout, random_str
 from mutation_test.mutation_coverage import MutationContext, check_all
-from mutation_test.settings import Detection, DETECTION_CODE, MUTATED_RUSTC_PATH, TEMPLATE_SCRIPT_PATH
+from mutation_test.settings import Detection, DETECTION_CODE, MUTATED_RUSTC_PATH, TEMPLATE_SCRIPT_PATH, ALL_MUTANTS
 
 RUSTSMITH_ROOT = Path("/home/jacob/projects/rustsmith")
 RUSTSMITH_PATH = RUSTSMITH_ROOT / "rustsmith/bin/rustsmith"
@@ -35,8 +35,14 @@ def parse_args() -> argparse.Namespace:
         "--mutants",
         type=int,
         nargs="+",
-        default=range(1, 381),
+        default=ALL_MUTANTS,
         help="Kill list of mutants. Separated by space. E.g. 5 7 93 95 96 100 101",
+    )
+    killing_settings.add_argument(
+        "--continue-from-mutant",
+        type=int,
+        default=0,
+        help="Continue experiment from a mutant ID onwards. Useful for resuming experiments",
     )
     killing_settings.add_argument(
         "--minutes-per-mutant",
@@ -89,6 +95,9 @@ def parse_args() -> argparse.Namespace:
 
     # do a bit more parsing once inputs are specified
     args = parser.parse_args()
+
+    # postprocessing
+    args.mutants = [m for m in args.mutants if m >= args.continue_from_mutant]
 
     return args
 
@@ -244,8 +253,11 @@ def attempt_murder(mutant: int, ground: KillingGroundSettings) -> CoverageDict:
             if sufficient_for_level(ground.level, detection_types):
                 print(f"Mutant {mutant} sufficiently killed! Moving on...\n")
                 return coverage
-
-            print(f"Mutant {mutant} stubbornly survived. Trying new batch of test cases.")
+            
+            if not coverage:
+                print(f"Mutant {mutant} stubbornly survived. Trying new batch of test cases.")
+            else:
+                print(f"Mutant killed in these ways: {set(coverage.keys())}. Continuing for a fuller kill.")
 
 
 def _jsonify_coverage_dict(coverage: CoverageDict) -> str:
